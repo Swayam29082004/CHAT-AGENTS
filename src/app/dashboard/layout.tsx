@@ -1,23 +1,17 @@
-// src/app/dashboard/layout.tsx
-import type { Metadata } from "next";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Navbar from "@/components/dashboard/Navbar";
 
-export const metadata: Metadata = {
-  title: "Dashboard | Chat Agent",
-  description: "User dashboard with sidebar and navbar",
-};
-
-// This layout wraps all dashboard pages
-export default function DashboardLayout() {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex">
-      {/* Sidebar on the left */}
       <Sidebar />
-
-      {/* Main content area */}
-      <div className="flex-1 ml-64">
+      <div className="flex-1 ml-20 md:ml-64 transition-all duration-300">
         <Navbar />
+        <main className="p-6">{children}</main>
       </div>
     </div>
   );

@@ -1,19 +1,24 @@
-// src/components/dashboard/Sidebar.tsx
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-export default function Sidebar() {
+export default function Navbar() {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    router.push("/login");
+  };
+
   return (
-    <aside className="w-64 h-screen bg-gray-800 text-white fixed left-0 top-0 p-6">
-      <h2 className="text-2xl font-bold mb-8">Dashboard</h2>
-      <nav className="space-y-4">
-        <Link href="/dashboard" className="block hover:text-indigo-400">App</Link>
-        <Link href="/dashboard/playground" className="block hover:text-indigo-400">Playground</Link>
-        <Link href="/dashboard/deploy" className="block hover:text-indigo-400">Deploy</Link>
-        <Link href="/dashboard/history" className="block hover:text-indigo-400">History</Link>
-        <Link href="/dashboard/settings" className="block hover:text-indigo-400">Settings</Link>
-      </nav>
-    </aside>
+    <header className="h-16 bg-white shadow flex items-center justify-between px-6 sticky top-0 z-10">
+      <h1 className="text-xl font-semibold">Chat Agent Platform</h1>
+      <button
+        onClick={handleLogout}
+        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+      >
+        Logout
+      </button>
+    </header>
   );
 }
