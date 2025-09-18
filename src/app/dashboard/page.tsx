@@ -35,11 +35,12 @@ export default function DashboardPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-2xl font-bold">Welcome back, {user.username} 👋</h1>
-      <p className="mt-2 text-gray-700">
-        This is your dashboard. Use the sidebar to navigate.
-      </p>
-    </div>
-  );
+  <div className="min-h-screen bg-white p-6"> {/* changed bg-gray-50 → bg-white */}
+    <h1 className="text-2xl font-bold">Welcome back, {user.username} 👋</h1>
+    <p className="mt-2 text-gray-700">
+      This is your dashboard. Use the sidebar to navigate.
+    </p>
+  </div>
+);
+
 }

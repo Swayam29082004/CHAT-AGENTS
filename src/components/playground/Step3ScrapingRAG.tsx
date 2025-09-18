@@ -44,7 +44,7 @@ export default function Step3ScrapingRAG() {
       <h2 className="text-xl font-semibold mb-4">
         Step 3: Extend with Website Scraping & RAG
       </h2>
-      <p className="text-gray-600 mb-4">
+      <p className="text-red-300 mb-4">
         The chat agent will scrape content and use MCP + RAG (Retrieval-Augmented
         Generation) to provide extended answers.
       </p>

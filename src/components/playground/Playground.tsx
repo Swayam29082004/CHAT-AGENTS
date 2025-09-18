@@ -4,9 +4,9 @@ import { useState } from "react";
 import PlaygroundStepper from "./PlaygroundStepper";
 import Step1APIModel from "./Step1APIModel";
 import Step2Customization from "./Step2Customization";
-import Step3ScrapingRAG from "./Step3ScrapingRAG.tsx";
+import Step3ScrapingRAG from "./Step3ScrapingRAG";
 import Step4Preview from "./Step4Preview";
-import Step5Integration from "./Step5Integration";
+import Step5Integration  from "./Step5Integration";
 
 export default function Playground() {
   const [activeStep, setActiveStep] = useState(0);

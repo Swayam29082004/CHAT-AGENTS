@@ -23,6 +23,7 @@
     "cloudinary": "^2.7.0",
     "contentstack": "^3.26.2",
     "date-fns": "^4.1.0",
+    "framer-motion": "^12.23.15",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.1",
     "next": "15.5.3",

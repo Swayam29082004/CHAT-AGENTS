@@ -12,18 +12,13 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
 
 body {
-  background: var(--background);
+  background: #ffffff !important; /* force full white */
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
 
 /* === Form Input === */
 .form-input {
