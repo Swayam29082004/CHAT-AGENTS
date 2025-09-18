@@ -24,3 +24,26 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* === Form Input === */
+.form-input {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
+    focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+    sm:text-sm;
+}
+
+/* === Primary Button === */
+.btn-primary {
+  @apply bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4
+    rounded-md shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+}
+
+/* === Alerts === */
+.alert-error {
+  @apply bg-red-100 text-red-700 px-4 py-2 rounded-md text-sm border border-red-200;
+}
+
+.alert-success {
+  @apply bg-green-100 text-green-700 px-4 py-2 rounded-md text-sm border border-green-200;
+}
+
