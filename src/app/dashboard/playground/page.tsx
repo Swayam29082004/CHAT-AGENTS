@@ -1,4 +1,4 @@
-import Playground from "@/components/layout/Playground";
+import Playground from "@/components/playground/Playground";
 
 export default function PlaygroundPage() {
   return <Playground />;
