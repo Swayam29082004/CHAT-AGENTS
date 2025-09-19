@@ -2,6 +2,7 @@ import { BrightDataMCPServer } from "@brightdata/mcp";
 import { Server } from "@modelcontextprotocol/sdk/server";
 import dotenv from "dotenv";
 
+// Load environment variables
 dotenv.config({ path: "../.env.local" });
 
 const server = new BrightDataMCPServer({
