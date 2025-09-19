@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import PlaygroundStepper from "./PlaygroundStepper";
 import Step1APIModel from "./Step1APIModel";
@@ -28,18 +27,18 @@ export default function Playground() {
     "Integration",
   ];
 
-  // ✅ Save progress on Next
-  const handleNext = async () => {
+  // 🔑 Extract save logic
+  const saveProgress = async (step: number) => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
 
     let progress: any = {};
-    if (activeStep === 0) {
+    if (step === 0) {
       progress = { apiKey, provider, model };
-    } else if (activeStep === 1) {
+    } else if (step === 1) {
       progress = { agentName, avatar, color };
-    } else if (activeStep === 2) {
-      progress = { scrapingEnabled: true }; // extend later
-    } else if (activeStep === 3) {
+    } else if (step === 2) {
+      progress = { scrapingEnabled: true };
+    } else if (step === 3) {
       progress = { preview: { theme, color, agentName } };
     }
 
@@ -49,15 +48,25 @@ export default function Playground() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user?.id,
-          step: activeStep,
+          step,
           progress,
         }),
       });
     } catch (err) {
       console.error("Failed to save progress:", err);
     }
+  };
 
+  // ✅ Save on Next
+  const handleNext = async () => {
+    await saveProgress(activeStep);
     setActiveStep((prev) => prev + 1);
+  };
+
+  // ✅ Save on Back
+  const handleBack = async () => {
+    await saveProgress(activeStep);
+    setActiveStep((prev) => prev - 1);
   };
 
   // ✅ Load saved progress on mount
@@ -73,7 +82,6 @@ export default function Playground() {
         if (data.success && data.agent?.progress) {
           const p = data.agent.progress;
 
-          // restore fields
           if (p.step0) {
             setApiKey(p.step0.apiKey || "");
             setProvider(p.step0.provider || "");
@@ -104,8 +112,6 @@ export default function Playground() {
 
     loadProgress();
   }, []);
-
-  const handleBack = () => setActiveStep((prev) => prev - 1);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
