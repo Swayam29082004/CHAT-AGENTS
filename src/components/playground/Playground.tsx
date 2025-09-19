@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PlaygroundStepper from "./PlaygroundStepper";
 import Step1APIModel from "./Step1APIModel";
 import Step2Customization from "./Step2Customization";
 import Step3ScrapingRAG from "./Step3ScrapingRAG";
 import Step4Preview from "./Step4Preview";
-import Step5Integration  from "./Step5Integration";
+import Step5Integration from "./Step5Integration";
 
 export default function Playground() {
   const [activeStep, setActiveStep] = useState(0);
@@ -28,7 +28,83 @@ export default function Playground() {
     "Integration",
   ];
 
-  const handleNext = () => setActiveStep((prev) => prev + 1);
+  // ✅ Save progress on Next
+  const handleNext = async () => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+    let progress: any = {};
+    if (activeStep === 0) {
+      progress = { apiKey, provider, model };
+    } else if (activeStep === 1) {
+      progress = { agentName, avatar, color };
+    } else if (activeStep === 2) {
+      progress = { scrapingEnabled: true }; // extend later
+    } else if (activeStep === 3) {
+      progress = { preview: { theme, color, agentName } };
+    }
+
+    try {
+      await fetch("/api/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user?.id,
+          step: activeStep,
+          progress,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to save progress:", err);
+    }
+
+    setActiveStep((prev) => prev + 1);
+  };
+
+  // ✅ Load saved progress on mount
+  useEffect(() => {
+    async function loadProgress() {
+      try {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        if (!user?.id) return;
+
+        const res = await fetch(`/api/progress?userId=${user.id}`);
+        const data = await res.json();
+
+        if (data.success && data.agent?.progress) {
+          const p = data.agent.progress;
+
+          // restore fields
+          if (p.step0) {
+            setApiKey(p.step0.apiKey || "");
+            setProvider(p.step0.provider || "");
+            setModel(p.step0.model || "");
+          }
+          if (p.step1) {
+            setAgentName(p.step1.agentName || "");
+            setAvatar(p.step1.avatar || "/PHOTO_AGENT.jpg");
+            setColor(p.step1.color || "#4f46e5");
+          }
+          if (p.step3?.preview) {
+            setTheme(p.step3.preview.theme || "light");
+          }
+
+          // resume at next step
+          const completedSteps = Object.keys(p);
+          if (completedSteps.length > 0) {
+            const lastStep = Math.max(
+              ...completedSteps.map((s) => parseInt(s.replace("step", "")))
+            );
+            setActiveStep(lastStep + 1);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load progress:", err);
+      }
+    }
+
+    loadProgress();
+  }, []);
+
   const handleBack = () => setActiveStep((prev) => prev - 1);
 
   return (
