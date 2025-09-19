@@ -1,49 +1,88 @@
-// server.mjs
-import dotenv from "dotenv";
-import { BrightDataMCPServer } from "@brightdata/mcp-server";
+import 'dotenv/config';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import axios from 'axios';
+import z from 'zod';
 
-dotenv.config();
+// --- Environment Variable Validation ---
+const { BRIGHT_DATA_API_TOKEN, BRIGHT_DATA_ACCOUNT_ID, BRIGHT_DATA_ZONE_NAME } = process.env;
 
-const API_KEY = process.env.BRIGHT_DATA_API_KEY;
-const ZONE_ID = process.env.BRIGHT_DATA_ZONE_ID;
-const PORT = process.env.PORT || 3000;
-
-if (!API_KEY || !ZONE_ID) {
-  console.error("Missing env vars. Please set BRIGHT_DATA_API_KEY and BRIGHT_DATA_ZONE_ID.");
+if (!BRIGHT_DATA_API_TOKEN || !BRIGHT_DATA_ACCOUNT_ID || !BRIGHT_DATA_ZONE_NAME) {
+  console.error("❌ Missing Bright Data credentials in your environment variables.");
   process.exit(1);
 }
 
-async function start() {
-  try {
-    const server = new BrightDataMCPServer({
-      apiKey: API_KEY,
-      zoneId: ZONE_ID,
-      port: Number(PORT),
-    });
+// --- Main Server Logic ---
+async function main() {
+  // 1. Initialize the MCP Server
+  const server = new McpServer({
+    name: 'brightdata-scraper',
+    version: '1.0.0',
+    capabilities: { tools: {} },
+  });
 
-    await Promise.resolve(server.start && server.start());
-    console.log(`[MCP] BrightData MCP Server started for zone ${ZONE_ID} (port ${PORT})`);
+  // 2. Define the Scraping Tool
+  server.registerTool(
+    'scrape_website',
+    {
+      description: 'Scrapes a given URL using Bright Data Web Unlocker and returns its HTML content.',
+      inputSchema: {
+        url: z.string().describe('The full URL of the website to scrape (e.g., https://example.com)'),
+      },
+    },
+    async (args) => {
+      const { url } = args;
+      console.log(`[MCP Server] Received request to scrape: ${url}`);
 
-    const stop = async () => {
-      console.log("[MCP] Shutting down...");
       try {
-        await Promise.resolve(server.stop && server.stop());
-      } catch (err) {
-        console.error("[MCP] Error during stop:", err);
-      }
-      process.exit(0);
-    };
+        // --- Axios Configuration for Bright Data Proxy ---
+        const username = `brd-customer-${BRIGHT_DATA_ACCOUNT_ID}-zone-${BRIGHT_DATA_ZONE_NAME}`;
+        const password = BRIGHT_DATA_API_TOKEN;
+        const host = 'brd.superproxy.io';
+        const port = 22225;
 
-    process.on("SIGINT", stop);
-    process.on("SIGTERM", stop);
-    process.on("uncaughtException", (err) => {
-      console.error("uncaughtException", err);
-      stop();
-    });
-  } catch (err) {
-    console.error("[MCP] Failed to start MCP server:", err);
-    process.exit(1);
-  }
+        const response = await axios.get(url, {
+          proxy: {
+            host,
+            port,
+            auth: {
+              username,
+              password,
+            },
+            protocol: 'http',
+          },
+        });
+
+        console.log(`[MCP Server] Successfully scraped ${url}. Returning content.`);
+        
+        // Return the scraped HTML content
+        return {
+          content: [{
+            type: 'text',
+            text: response.data,
+          }],
+        };
+      } catch (error) {
+        console.error('[MCP Server] Scraping failed:', error.message);
+        // Return a structured error message to the client
+        return {
+          content: [{
+            type: 'text',
+            text: `Error: Failed to scrape the URL. Reason: ${error.message}`,
+          }],
+        };
+      }
+    }
+  );
+
+  // 3. Connect the Server to a Transport (Stdio for Claude Desktop)
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+
+  console.log('✅ Bright Data MCP Server is running and connected via stdio.');
 }
 
-start();
+main().catch(error => {
+  console.error('Fatal error:', error);
+  process.exit(1);
+});
