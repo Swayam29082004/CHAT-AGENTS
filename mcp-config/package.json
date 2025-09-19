@@ -1,18 +1,17 @@
 {
   "name": "mcp-config",
   "version": "1.0.0",
-  "description": "",
-  "type": "module",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "description": "",
   "dependencies": {
-    "@brightdata/mcp": "^1.9.3",
-    "@modelcontextprotocol/sdk": "^1.18.1"
+    "@brightdata/mcp": "^2.5.0",
+    "@modelcontextprotocol/sdk": "^1.18.1",
+    "dotenv": "^17.2.2"
   }
 }
