@@ -10,30 +10,16 @@ export interface AgentProgress {
     agentName: string;
     avatar: string;
     color: string;
+    welcomeMessage: string;
+    placeholderText: string;
   };
   step2?: {
     scrapingEnabled: boolean;
   };
-  step3?: {
-    preview: {
-      theme: string;
-      color: string;
-      agentName: string;
-    };
-  };
 }
 
 export interface AgentDoc extends Document {
-  uuid: string;
-  userId: mongoose.Types.ObjectId;
-  provider: "openai" | "anthropic" | "groq";
-  modelName: string;
-  apiKeyEncrypted: string;
-  theme: { color: string };
-  isActive: boolean;
-  progress: AgentProgress;   // ✅ added
-  createdAt: Date;
-  updatedAt: Date;
+  progress: AgentProgress;
 }
 
 const ProgressSchema = new Schema(
@@ -47,16 +33,11 @@ const ProgressSchema = new Schema(
       agentName: String,
       avatar: String,
       color: String,
+      welcomeMessage: String,
+      placeholderText: String,
     },
     step2: {
       scrapingEnabled: Boolean,
-    },
-    step3: {
-      preview: {
-        theme: String,
-        color: String,
-        agentName: String,
-      },
     },
   },
   { _id: false }
@@ -75,7 +56,7 @@ const AgentSchema = new Schema<AgentDoc>(
     apiKeyEncrypted: { type: String, required: true },
     theme: { color: { type: String, default: "#4f46e5" } },
     isActive: { type: Boolean, default: true },
-    progress: { type: ProgressSchema, default: {} },  // ✅ structured progress
+    progress: { type: ProgressSchema, default: {} },
   },
   { timestamps: true }
 );
