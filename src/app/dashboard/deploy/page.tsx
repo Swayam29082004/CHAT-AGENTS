@@ -1,44 +1,87 @@
-'use client'; // ✅ Add this directive for hooks
+'use client';
 
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEye, faEdit, faTrash, faCode } from "@fortawesome/free-solid-svg-icons";
-
-// Define the shape of an agent object, matching our model
-interface Agent {
-  _id: string;
-  name: string;
-  visibility: 'Public' | 'Private' | 'Unlisted';
-  avatar: string;
-}
+import { faEye, faEdit, faTrash, faCode, faCheck, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { fetchAgents, deleteAgent, editAgent, Agent } from "@/lib/services/agentService";
 
 export default function DeployPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState<string>("");
 
   useEffect(() => {
-    const fetchAgents = async () => {
+    const loadAgents = async () => {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       if (!user?.id) {
-        setError("You must be logged in to view agents.");
+        setError("❌ You must be logged in to view agents.");
         setIsLoading(false);
         return;
       }
+
       try {
-        const res = await fetch(`/api/agents?userId=${user.id}`);
-        if (!res.ok) throw new Error("Failed to fetch your agents.");
-        
-        const data = await res.json();
-        setAgents(data.agents);
+        const data = await fetchAgents(user.id);
+        setAgents(data);
       } catch (err: any) {
-        setError(err.message);
+        setError(err.message || "Unexpected error fetching agents.");
       } finally {
         setIsLoading(false);
       }
     };
-    fetchAgents();
+
+    loadAgents();
   }, []);
+
+  const handleDelete = async (agentId: string) => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (!user?.id) return;
+
+    try {
+      await deleteAgent(user.id, agentId);
+      setAgents((prev) => prev.filter((a) => a._id !== agentId));
+    } catch (err: any) {
+      alert(err.message || "❌ Failed to delete agent");
+    }
+  };
+
+  const handleEditStart = (agent: Agent) => {
+    setEditingId(agent._id);
+    setEditName(agent.name);
+  };
+
+  const handleEditCancel = () => {
+    setEditingId(null);
+    setEditName("");
+  };
+
+  const handleEditSave = async (agentId: string) => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (!user?.id) return;
+
+    try {
+      const updated = await editAgent(user.id, agentId, { name: editName });
+      setAgents((prev) => prev.map((a) => (a._id === agentId ? updated : a)));
+      setEditingId(null);
+      setEditName("");
+    } catch (err: any) {
+      alert(err.message || "❌ Failed to update agent");
+    }
+  };
+
+  // ✅ New: handle visibility changes
+  const handleVisibilityChange = async (agentId: string, newVisibility: 'Public' | 'Private' | 'Unlisted') => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (!user?.id) return;
+
+    try {
+      const updated = await editAgent(user.id, agentId, { visibility: newVisibility });
+      setAgents((prev) => prev.map((a) => (a._id === agentId ? updated : a)));
+    } catch (err: any) {
+      alert(err.message || "❌ Failed to update visibility");
+    }
+  };
 
   if (isLoading) return <div className="p-6"><p>Loading your agents...</p></div>;
   if (error) return <div className="p-6 alert-error">{error}</div>;
@@ -56,21 +99,53 @@ export default function DeployPage() {
             <div key={agent._id} className="bg-gray-50 border rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <img src={agent.avatar} alt="Agent Avatar" className="w-12 h-12 rounded-full object-cover" />
-                <span className="font-semibold text-lg">{agent.name}</span>
-              </div>
-              <div className="flex items-center gap-4">
-                  <select
-                    defaultValue={agent.visibility}
+                {editingId === agent._id ? (
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
                     className="form-input text-sm"
-                  >
-                    <option value="Private">Private</option>
-                    <option value="Unlisted">Unlisted</option>
-                    <option value="Public">Public</option>
-                  </select>
-                  <button title="Preview" className="text-gray-500 hover:text-indigo-600"><FontAwesomeIcon icon={faEye} /></button>
-                  <button title="Get SDK/Embed Code" className="text-gray-500 hover:text-indigo-600"><FontAwesomeIcon icon={faCode} /></button>
-                  <button title="Edit" className="text-gray-500 hover:text-blue-600"><FontAwesomeIcon icon={faEdit} /></button>
-                  <button title="Delete" className="text-gray-500 hover:text-red-600"><FontAwesomeIcon icon={faTrash} /></button>
+                  />
+                ) : (
+                  <span className="font-semibold text-lg">{agent.name}</span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-4">
+                {/* ✅ Visibility dropdown now updates DB */}
+                <select
+                  value={agent.visibility}
+                  onChange={(e) =>
+                    handleVisibilityChange(agent._id, e.target.value as 'Public' | 'Private' | 'Unlisted')
+                  }
+                  className="form-input text-sm"
+                >
+                  <option value="Private">Private</option>
+                  <option value="Unlisted">Unlisted</option>
+                  <option value="Public">Public</option>
+                </select>
+
+                <button className="text-gray-500 hover:text-indigo-600"><FontAwesomeIcon icon={faEye} /></button>
+                <button className="text-gray-500 hover:text-indigo-600"><FontAwesomeIcon icon={faCode} /></button>
+
+                {editingId === agent._id ? (
+                  <>
+                    <button onClick={() => handleEditSave(agent._id)} className="text-green-600 hover:text-green-800">
+                      <FontAwesomeIcon icon={faCheck} />
+                    </button>
+                    <button onClick={handleEditCancel} className="text-red-600 hover:text-red-800">
+                      <FontAwesomeIcon icon={faTimes} />
+                    </button>
+                  </>
+                ) : (
+                  <button onClick={() => handleEditStart(agent)} className="text-gray-500 hover:text-blue-600">
+                    <FontAwesomeIcon icon={faEdit} />
+                  </button>
+                )}
+
+                <button onClick={() => handleDelete(agent._id)} className="text-gray-500 hover:text-red-600">
+                  <FontAwesomeIcon icon={faTrash} />
+                </button>
               </div>
             </div>
           ))
