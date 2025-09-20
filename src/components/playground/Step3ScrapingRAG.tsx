@@ -1,7 +1,6 @@
 "use client";
 import { useState, FormEvent, useEffect, useRef } from "react";
 
-// A simple progress bar component
 const ProgressBar = ({ progress }: { progress: number }) => (
   <div className="w-full bg-gray-200 rounded-full h-2.5 my-2">
     <div
