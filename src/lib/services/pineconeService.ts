@@ -36,10 +36,11 @@ export class PineconeService {
       const queryResult = await pineconeIndex.query({
         vector: queryEmbedding,
         topK,
-        // Filter results to only include vectors associated with the specific user
-        filter: {
-          userId: { '$eq': userId }
-        },
+        // ✅ Temporarily comment out the filter to search all documents
+        // filter: {
+        //   userId: { '$eq': userId }
+        // },
+        includeMetadata: true, 
       });
       
       return queryResult.matches || [];

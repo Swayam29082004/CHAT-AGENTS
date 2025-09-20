@@ -1,80 +1,89 @@
 "use client";
 
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 
 export default function Step3ScrapingRAG() {
-  const [url, setUrl] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [url, setUrl] = useState("https://books.toscrape.com/");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState<{ message: string; summary: string } | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!url.trim()) {
-      alert("Please enter a valid URL");
-      return;
-    }
+    if (!url.trim()) return;
 
-    setLoading(true);
-    setData(null);
-    setError(null);
+    setIsLoading(true);
+    setError("");
+    setResult(null);
 
     try {
-      const res = await fetch("/api/scrape", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch scraped data");
+      // 1. Get the logged-in user's ID from local storage
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!user?.id) {
+        throw new Error("You must be logged in to scrape content.");
       }
 
-      const result = await res.json();
-      setData(result.content); // assuming backend returns { content: "...scraped text..." }
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      // 2. Call the backend API with the URL and userId
+      const response = await fetch("/api/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, userId: user.id }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to process the website.");
+      }
+
+      setResult({ message: data.message, summary: data.summary });
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      setError(errorMessage);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
     <section className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-4">
-        Step 3: Extend with Website Scraping & RAG
+      <h2 className="text-xl font-semibold mb-2">
+        Step 3: Scrape Website & Create Knowledge Base
       </h2>
-      <p className="text-red-300 mb-4">
-        The chat agent will scrape content and use MCP + RAG (Retrieval-Augmented
-        Generation) to provide extended answers.
+      <p className="text-gray-600 mb-4">
+        Enter a URL to scrape its content. The text will be processed, converted into vector embeddings, and stored in your knowledge base (Pinecone).
       </p>
 
-      {/* URL Input + Submit */}
       <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
         <input
           type="url"
-          placeholder="Enter website URL"
+          placeholder="https://example.com"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="form-input flex-1"
           required
         />
         <button
           type="submit"
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
-          disabled={loading}
+          className="btn-primary"
+          disabled={isLoading}
         >
-          {loading ? "Loading..." : "Submit"}
+          {isLoading ? "Processing..." : "Process URL"}
         </button>
       </form>
 
-      {/* Display states */}
-      {loading && <p className="text-blue-600">⏳ Scraping in progress...</p>}
-      {error && <p className="text-red-600">❌ {error}</p>}
-      {data && (
-        <div className="mt-4 p-3 border rounded-lg bg-gray-50 text-gray-800 max-h-64 overflow-y-auto">
-          <h3 className="font-semibold mb-2">Scraped Content:</h3>
-          <p>{data}</p>
+      {/* --- Display API Call Status --- */}
+      {error && <div className="mt-4 alert-error">❌ {error}</div>}
+      
+      {result && (
+        <div className="mt-4 p-4 border rounded-lg bg-green-50 text-green-800">
+          <h3 className="font-bold mb-2">✅ Success!</h3>
+          <p className="text-sm">{result.message}</p>
+          <div className="mt-2 p-2 border-t border-green-200 text-xs text-gray-600">
+            <p className="font-semibold">Content Preview:</p>
+            <p className="mt-1 italic">{result.summary}</p>
+          </div>
         </div>
       )}
     </section>

@@ -15,42 +15,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Query and userId are required" }, { status: 400 });
     }
 
-    // 1. Create Embedding for the User's Query
     const embeddingService = new EmbeddingService();
     const queryEmbedding = (await embeddingService.generateEmbeddings([query]))[0];
 
-    // 2. Query Pinecone for Similar Context
     const pineconeService = new PineconeService();
-    // Retrieve the top 3 most relevant chunks of text for the user
     const queryResult = await pineconeService.query(queryEmbedding, 3, userId);
     
-    // 3. Construct the Augmented Prompt
     const context = queryResult.map(match => {
         const metadata = match.metadata as { textSnippet?: string; sourceUrl?: string };
-        return `- Source: ${metadata?.sourceUrl || 'N/A'}\n- Content: ${metadata?.textSnippet || ''}`;
+        return metadata?.textSnippet || '';
     }).join("\n\n");
 
-    const systemPrompt = `You are a helpful AI assistant. Your user has scraped content from various websites, which is stored in a vector database.
-Use the provided context below to answer the user's question.
-- If the context contains the answer, use it and cite the source URL.
-- If the context does not contain the answer, state that you couldn't find the information in the provided documents.
-- Do not make up answers.
+    // --- PROMPT UPDATED WITH SPECIFIC FORMATTING RULE ---
+    const systemPrompt = `You are a factual answering engine. Your instructions are:
+1. Answer the user's question directly and concisely using ONLY the provided context.
+2. When you refer to the main subject of the user's question in your answer, enclose it in double quotes. For example: The price of "Soumission" is £50.10.
+3. Do not add any conversational phrases, greetings, or explanations.
+4. If the context does not contain the answer, reply ONLY with the text: "I could not find an answer in the provided documents."
 
 CONTEXT:
 ${context}`;
 
-    // 4. Generate the Final Response with OpenAI
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // A powerful and fast model
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: query },
       ],
-      temperature: 0.5,
+      temperature: 0.2,
     });
 
     const answer = completion.choices[0]?.message?.content;
-    const sources = queryResult.map(match => match.metadata as { sourceUrl?: string });
+    
+    const sources = queryResult.map(match => {
+        const metadata = match.metadata as { sourceUrl?: string };
+        return { sourceUrl: metadata?.sourceUrl };
+    });
 
     return NextResponse.json({
       success: true,
