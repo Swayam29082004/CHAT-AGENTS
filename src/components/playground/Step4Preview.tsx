@@ -6,44 +6,34 @@ import { faPaperPlane, faSync } from "@fortawesome/free-solid-svg-icons";
 interface Message {
   role: 'user' | 'assistant';
   content: string;
-  sources?: ({ sourceUrl?: string } | null)[];
+  sources?: ({ sourceUrl?: string } | null)[]; // Can contain nulls
 }
 
-// Sub-component for displaying a single message
-function ChatMessage({ message }: { message: Message }) {
-  const isUser = message.role === 'user';
-  const validSources = message.sources?.filter(source => source && source.sourceUrl) || [];
+type Props = {
+  color: string;
+  agentName: string;
+};
 
+// Sub-component for displaying a single message
+function ChatMessage({ message, userColor }: { message: Message, userColor: string }) {
+  const isUser = message.role === 'user';
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`max-w-lg p-3 rounded-lg shadow-sm ${isUser ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-800'}`}>
+      <div 
+        className={`max-w-lg p-3 rounded-lg shadow-sm text-sm`}
+        style={{ 
+          backgroundColor: isUser ? userColor : '#e5e7eb', // Use theme color for user
+          color: isUser ? '#ffffff' : '#1f2937'
+        }}
+      >
         <p className="whitespace-pre-wrap">{message.content}</p>
-        
-        {/*
-          ✅ THIS BLOCK IS NOW COMMENTED OUT TO HIDE SOURCES FROM THE UI
-          
-          {!isUser && validSources.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-gray-300">
-              <h4 className="text-xs font-bold mb-1">Sources:</h4>
-              <ul className="text-xs list-disc pl-4">
-                {validSources.map((source, index) => (
-                  <li key={index}>
-                    <a href={source!.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                      {source!.sourceUrl}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        */}
+        {/* Sources are hidden from UI per your request but handled safely */}
       </div>
     </div>
   );
 }
 
-// The rest of the Step4Preview component remains the same
-export default function Step4Preview() {
+export default function Step4Preview({ color, agentName }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -75,7 +65,8 @@ export default function Step4Preview() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get a response from the agent.');
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to get a response from the agent.');
       }
       
       const data = await response.json();
@@ -83,7 +74,7 @@ export default function Step4Preview() {
       setMessages(prev => [...prev, assistantMessage]);
 
     } catch (error) {
-       const message = error instanceof Error ? error.message : "Sorry, something went wrong.";
+      const message = error instanceof Error ? error.message : "Sorry, something went wrong.";
       const errorMessage: Message = { role: 'assistant', content: message };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -93,7 +84,7 @@ export default function Step4Preview() {
 
   return (
     <section className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-4">Step 4: Preview & Chat</h2>
+      <h2 className="text-xl font-semibold mb-4">Step 4: Preview & Chat with "{agentName || 'Your Agent'}"</h2>
       <div className="border rounded-lg h-[60vh] flex flex-col bg-gray-50">
         <div ref={chatContainerRef} className="flex-grow p-4 space-y-4 overflow-y-auto">
           {messages.length === 0 && (
@@ -102,7 +93,7 @@ export default function Step4Preview() {
             </div>
           )}
           {messages.map((msg, index) => (
-            <ChatMessage key={index} message={msg} />
+            <ChatMessage key={index} message={msg} userColor={color} />
           ))}
           {isLoading && (
              <div className="flex justify-start">
@@ -121,7 +112,7 @@ export default function Step4Preview() {
             className="form-input flex-grow"
             disabled={isLoading}
           />
-          <button type="submit" className="btn-primary" disabled={isLoading || !input.trim()}>
+          <button type="submit" className="btn-primary" style={{backgroundColor: color}} disabled={isLoading || !input.trim()}>
             <FontAwesomeIcon icon={faPaperPlane} />
           </button>
         </form>

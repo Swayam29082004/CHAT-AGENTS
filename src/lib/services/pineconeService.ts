@@ -2,9 +2,6 @@ import { pineconeIndex } from './pinecone-client';
 import { type RecordMetadata, type ScoredPineconeRecord } from '@pinecone-database/pinecone';
 
 export class PineconeService {
-  /**
-   * Upserts vectors into the Pinecone index.
-   */
   async upsert(vectors: { id: string; values: number[]; metadata?: RecordMetadata }[]) {
     if (!vectors || vectors.length === 0) {
       console.log("No vectors to upsert.");
@@ -12,7 +9,7 @@ export class PineconeService {
     }
 
     try {
-      // Upsert in batches for better performance
+      // Upsert in batches for better performance with large documents
       for (let i = 0; i < vectors.length; i += 100) {
         const batch = vectors.slice(i, i + 100);
         await pineconeIndex.upsert(batch);
@@ -25,22 +22,19 @@ export class PineconeService {
   }
 
   /**
-   * Queries the Pinecone index to find vectors similar to the query vector.
-   * @param queryEmbedding The vector embedding of the user's query.
-   * @param topK The number of similar results to return.
-   * @param userId The ID of the user to filter results for.
-   * @returns A promise that resolves to an array of the most similar records.
+   * Queries the index to find vectors similar to the query vector,
+   * filtered by a specific user ID.
    */
   async query(queryEmbedding: number[], topK: number, userId: string): Promise<ScoredPineconeRecord<RecordMetadata>[]> {
     try {
       const queryResult = await pineconeIndex.query({
         vector: queryEmbedding,
         topK,
-        // ✅ Temporarily comment out the filter to search all documents
-        // filter: {
-        //   userId: { '$eq': userId }
-        // },
-        includeMetadata: true, 
+        // ✅ CRITICAL: Filter results to only include vectors for the specific user
+        filter: {
+          userId: { '$eq': userId }
+        },
+        includeMetadata: true, // Ensure metadata is returned
       });
       
       return queryResult.matches || [];

@@ -10,10 +10,11 @@ export interface ContentChunk {
 }
 
 export class DataProcessor {
+  // Increased chunk size for better context
   private maxChunkSize: number;
   private overlapSize: number;
 
-  constructor(maxChunkSize = 1000, overlapSize = 100) {
+  constructor(maxChunkSize = 2000, overlapSize = 200) {
     this.maxChunkSize = maxChunkSize;
     this.overlapSize = overlapSize;
   }
@@ -34,8 +35,10 @@ export class DataProcessor {
 
   private extractTextFromHtml(html: string): string {
     const $ = cheerio.load(html);
-    $('script, style, nav, footer, header, aside, form').remove();
+    // Remove common non-content elements
+    $('script, style, nav, footer, header, aside, form, noscript').remove();
     const mainContent = $('body').text();
+    // Consolidate whitespace
     return mainContent.replace(/\s\s+/g, ' ').trim();
   }
 

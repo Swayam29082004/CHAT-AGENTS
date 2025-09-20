@@ -23,18 +23,21 @@ export async function POST(req: NextRequest) {
     
     const context = queryResult.map(match => {
         const metadata = match.metadata as { textSnippet?: string; sourceUrl?: string };
-        return metadata?.textSnippet || '';
+        return `- Content: ${metadata?.textSnippet || ''}`;
     }).join("\n\n");
 
-    // --- PROMPT UPDATED WITH SPECIFIC FORMATTING RULE ---
-    const systemPrompt = `You are a factual answering engine. Your instructions are:
-1. Answer the user's question directly and concisely using ONLY the provided context.
-2. When you refer to the main subject of the user's question in your answer, enclose it in double quotes. For example: The price of "Soumission" is £50.10.
-3. Do not add any conversational phrases, greetings, or explanations.
-4. If the context does not contain the answer, reply ONLY with the text: "I could not find an answer in the provided documents."
+    // ✅ --- NEW, SMARTER SYSTEM PROMPT --- ✅
+    const systemPrompt = `You are an expert AI assistant. Your user has provided content from a website. Use ONLY the provided context below to answer the user's question.
 
 CONTEXT:
-${context}`;
+${context}
+
+---
+INSTRUCTIONS:
+1.  **If the user asks a specific question** (e.g., "what is the price of book X"), find the specific answer in the context and provide it directly.
+2.  **If the user asks a general or vague question** (e.g., "tell me the book titles", "what is this about?"), summarize the relevant information from the context to provide a helpful response. For example, you can list the book titles you find.
+3.  **If the context does NOT contain any relevant information** to answer the question, you must respond with exactly: "I could not find an answer in the provided documents."
+4.  Do not use any prior knowledge or make up information. Do not mention source URLs.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -46,7 +49,6 @@ ${context}`;
     });
 
     const answer = completion.choices[0]?.message?.content;
-    
     const sources = queryResult.map(match => {
         const metadata = match.metadata as { sourceUrl?: string };
         return { sourceUrl: metadata?.sourceUrl };

@@ -3,7 +3,6 @@ import axios, { isAxiosError } from 'axios';
 import { DataProcessor } from "@/lib/services/dataProcessor";
 import OpenAI from "openai";
 
-// Initialize the OpenAI client with your API key
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -17,7 +16,6 @@ export async function POST(req: NextRequest) {
     }
     
     // --- 1. SCRAPE WEBSITE CONTENT ---
-    // Using the same robust Bright Data proxy setup
     const accountId = process.env.BRIGHT_DATA_ACCOUNT_ID;
     const zoneName = process.env.BRIGHT_DATA_ZONE_NAME;
     const apiToken = process.env.BRIGHT_DATA_API_TOKEN;
@@ -38,7 +36,6 @@ export async function POST(req: NextRequest) {
 
     // --- 2. PROCESS AND EXTRACT TEXT ---
     const processor = new DataProcessor();
-    // The process method returns chunks; we join them to get the full text.
     const cleanText = processor.process(htmlContent, url)
                                .map(chunk => chunk.text)
                                .join(" ");
@@ -49,20 +46,19 @@ export async function POST(req: NextRequest) {
 
     // --- 3. SUMMARIZE WITH OPENAI ---
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo", // Cost-effective model for summarization
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content: "You are an expert assistant that provides clear, concise, and easy-to-read summaries of web page content.",
+          content: "You are an expert assistant that provides clear and concise summaries of web page content.",
         },
         {
           role: "user",
-          // Truncate text to stay within model context limits
           content: `Please summarize the following text from the website ${url}:\n\n"${cleanText.substring(0, 4000)}"`,
         },
       ],
-      temperature: 0.3, // Lower temperature for more factual summaries
-      max_tokens: 250,  // Limit the length of the summary
+      temperature: 0.3,
+      max_tokens: 250,
     });
 
     const summary = completion.choices[0]?.message?.content;
@@ -74,14 +70,12 @@ export async function POST(req: NextRequest) {
 
   } catch (err: unknown) {
     console.error("[Summarize API] Error:", err);
-
     if (isAxiosError(err)) {
         return NextResponse.json(
           { error: "Failed to scrape the website for summarization.", details: err.message },
           { status: err.response?.status || 500 }
         );
     }
-    
     return NextResponse.json(
       { error: "An unexpected error occurred while generating the summary." },
       { status: 500 }
