@@ -13,38 +13,58 @@ import Check from "@mui/icons-material/Check";
 const QontoConnector = styled(StepConnector)(({ theme }) => ({
   [`&.${stepConnectorClasses.alternativeLabel}`]: {
     top: 10,
+    left: 'calc(-50% + 16px)',
+    right: 'calc(50% + 16px)',
+  },
+  [`&.${stepConnectorClasses.active}`]: {
+    [`& .${stepConnectorClasses.line}`]: {
+      borderColor: '#4f46e5', // Active color
+    },
+  },
+  [`&.${stepConnectorClasses.completed}`]: {
+    [`& .${stepConnectorClasses.line}`]: {
+      borderColor: '#4f46e5', // Completed color
+    },
   },
   [`& .${stepConnectorClasses.line}`]: {
-    borderColor: "#eaeaf0",
+    borderColor: theme.palette.mode === 'dark' ? theme.palette.grey[800] : '#eaeaf0',
     borderTopWidth: 3,
     borderRadius: 1,
   },
 }));
 
 const QontoStepIconRoot = styled("div")<{
-  ownerState: { active?: boolean; completed?: boolean };
-}>(({ ownerState }) => ({
-  color: ownerState.active ? "#784af4" : ownerState.completed ? "#784af4" : "#eaeaf0",
-  display: "flex",
+  ownerState: { active?: boolean };
+}>(({ theme, ownerState }) => ({
+  color: theme.palette.mode === 'dark' ? theme.palette.grey[700] : '#eaeaf0',
+  display: 'flex',
   height: 22,
-  alignItems: "center",
-  "& .QontoStepIcon-completedIcon": {
-    color: "#784af4",
+  alignItems: 'center',
+  ...(ownerState.active && {
+    color: '#4f46e5',
+  }),
+  '& .QontoStepIcon-completedIcon': {
+    color: '#4f46e5',
+    zIndex: 1,
     fontSize: 18,
   },
-  "& .QontoStepIcon-circle": {
+  '& .QontoStepIcon-circle': {
     width: 8,
     height: 8,
-    borderRadius: "50%",
-    backgroundColor: "currentColor",
+    borderRadius: '50%',
+    backgroundColor: 'currentColor',
   },
 }));
 
 function QontoStepIcon(props: StepIconProps) {
   const { active, completed, className } = props;
   return (
-    <QontoStepIconRoot ownerState={{ active, completed }} className={className}>
-      {completed ? <Check className="QontoStepIcon-completedIcon" /> : <div className="QontoStepIcon-circle" />}
+    <QontoStepIconRoot ownerState={{ active }} className={className}>
+      {completed ? (
+        <Check className="QontoStepIcon-completedIcon" />
+      ) : (
+        <div className="QontoStepIcon-circle" />
+      )}
     </QontoStepIconRoot>
   );
 }

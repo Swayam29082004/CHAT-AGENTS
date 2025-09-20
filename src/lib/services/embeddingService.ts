@@ -1,7 +1,6 @@
 import axios, { isAxiosError } from 'axios';
 
-// 1. Define the structure of the response from the OpenAI API
-// This tells TypeScript exactly what to expect.
+// Define the structure of the response from the OpenAI API for better type safety
 interface OpenAIEmbeddingItem {
   object: string;
   embedding: number[];
@@ -24,16 +23,20 @@ export class EmbeddingService {
 
   constructor() {
     this.apiKey = process.env.OPENAI_API_KEY!;
-    this.model = 'text-embedding-3-small';
+    this.model = 'text-embedding-3-small'; // Powerful and cost-effective model
 
     if (!this.apiKey) {
       throw new Error("OpenAI API key is not configured in environment variables.");
     }
   }
 
+  /**
+   * Generates vector embeddings for an array of texts.
+   * @param texts An array of strings to be converted into embeddings.
+   * @returns A promise that resolves to an array of vector embeddings.
+   */
   async generateEmbeddings(texts: string[]): Promise<number[][]> {
     try {
-      // 2. Apply the 'OpenAIEmbeddingResponse' type to the axios post request.
       const response = await axios.post<OpenAIEmbeddingResponse>(
         'https://api.openai.com/v1/embeddings',
         {
@@ -49,14 +52,12 @@ export class EmbeddingService {
       );
 
       if (response.data && response.data.data) {
-        // 3. The 'item' is now correctly typed as 'OpenAIEmbeddingItem'.
         return response.data.data.map((item) => item.embedding);
       } else {
         return [];
       }
     } catch (error) {
-      // 4. Improve error handling by checking if the error is from Axios.
-      // This gives us access to more specific error information.
+      // Improve error handling by checking if the error is from Axios
       if (isAxiosError(error)) {
         console.error("Error generating OpenAI embeddings:", error.response?.data || error.message);
       } else {

@@ -7,6 +7,11 @@ import Step3ScrapingRAG from "./Step3ScrapingRAG";
 import Step4Preview from "./Step4Preview";
 import Step5Integration from "./Step5Integration";
 
+// Import new icons
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowLeft, faArrowRight, faRocket } from "@fortawesome/free-solid-svg-icons";
+
+
 export default function Playground() {
   const [activeStep, setActiveStep] = useState(0);
 
@@ -27,7 +32,6 @@ export default function Playground() {
     "Integration",
   ];
 
-  // 🔑 Extract save logic
   const saveProgress = async (step: number) => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
 
@@ -56,20 +60,27 @@ export default function Playground() {
       console.error("Failed to save progress:", err);
     }
   };
-
-  // ✅ Save on Next
+  
   const handleNext = async () => {
-    await saveProgress(activeStep);
-    setActiveStep((prev) => prev + 1);
+    if (activeStep < steps.length - 1) {
+      await saveProgress(activeStep);
+      setActiveStep((prev) => prev + 1);
+    }
   };
-
-  // ✅ Save on Back
+  
   const handleBack = async () => {
-    await saveProgress(activeStep);
-    setActiveStep((prev) => prev - 1);
+    if (activeStep > 0) {
+      await saveProgress(activeStep);
+      setActiveStep((prev) => prev - 1);
+    }
   };
 
-  // ✅ Load saved progress on mount
+  const handleDeploy = () => {
+    // Add your deployment logic here
+    console.log("Deploying agent...");
+    alert("Deployment logic would be triggered here!");
+  };
+
   useEffect(() => {
     async function loadProgress() {
       try {
@@ -96,13 +107,12 @@ export default function Playground() {
             setTheme(p.step3.preview.theme || "light");
           }
 
-          // resume at next step
           const completedSteps = Object.keys(p);
           if (completedSteps.length > 0) {
             const lastStep = Math.max(
               ...completedSteps.map((s) => parseInt(s.replace("step", "")))
             );
-            setActiveStep(lastStep + 1);
+            setActiveStep(lastStep < steps.length -1 ? lastStep + 1 : lastStep);
           }
         }
       } catch (err) {
@@ -144,27 +154,41 @@ export default function Playground() {
         )}
         {activeStep === 2 && <Step3ScrapingRAG />}
         {activeStep === 3 && (
-          <Step4Preview theme={theme} color={color} agentName={agentName} />
+          <Step4Preview />
         )}
         {activeStep === 4 && <Step5Integration />}
       </div>
 
-      {/* Navigation Buttons */}
-      <div className="mt-6 flex justify-between">
+      {/* Navigation Buttons with Icons and Conditional Logic */}
+      <div className="mt-8 flex justify-between">
         <button
           disabled={activeStep === 0}
           onClick={handleBack}
-          className="bg-gray-300 px-4 py-2 rounded disabled:opacity-50"
+          className="bg-gray-300 text-gray-800 px-6 py-2 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-400 transition-colors"
         >
+          <FontAwesomeIcon icon={faArrowLeft} />
           Back
         </button>
-        <button
-          disabled={activeStep === steps.length - 1}
-          onClick={handleNext}
-          className="bg-indigo-600 text-white px-4 py-2 rounded"
-        >
-          Next
-        </button>
+
+        {activeStep === steps.length - 1 ? (
+          // Show Deploy button on the last step
+          <button
+            onClick={handleDeploy}
+            className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-green-700 transition-colors"
+          >
+            Deploy
+            <FontAwesomeIcon icon={faRocket} />
+          </button>
+        ) : (
+          // Show Next button on all other steps
+          <button
+            onClick={handleNext}
+            className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-indigo-700 transition-colors"
+          >
+            Next
+            <FontAwesomeIcon icon={faArrowRight} />
+          </button>
+        )}
       </div>
     </div>
   );
