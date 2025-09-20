@@ -16,18 +16,21 @@ export default function Playground() {
   // Global states for agent configuration
   const [apiKey, setApiKey] = useState("");
   const [provider, setProvider] = useState("");
-  const [model, setModel] = useState("");
+  const [modelName, setModelName] = useState(""); // ✅ Renamed from 'model'
   const [agentName, setAgentName] = useState("Helpful Assistant");
   const [avatar, setAvatar] = useState("/PHOTO_AGENT.jpg");
   const [color, setColor] = useState("#4f46e5");
   const [welcomeMessage, setWelcomeMessage] = useState("Hello! How can I help you today?");
   const [placeholderText, setPlaceholderText] = useState("Ask a question...");
 
-  // Updated steps array (Integration removed)
   const steps = ["API & Model", "Customization", "Scraping + RAG", "Preview"];
 
-  // This function will now save the complete agent configuration
   const handleSaveAgent = async () => {
+    if (!provider || !modelName) { // ✅ Renamed from 'model'
+      alert("Please select a Provider and a Model from Step 1 before saving.");
+      return;
+    }
+
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     if (!user?.id) {
       alert("You must be logged in to save an agent.");
@@ -38,12 +41,11 @@ export default function Playground() {
       userId: user.id,
       name: agentName,
       provider,
-      model,
+      modelName, // ✅ Renamed from 'model'
       avatar,
       color,
       welcomeMessage,
       placeholderText,
-      // You can add more fields to save here
     };
 
     try {
@@ -58,7 +60,7 @@ export default function Playground() {
       }
       
       alert("Agent saved successfully!");
-      router.push('/dashboard/deploy'); // Redirect to the deploy page
+      router.push('/dashboard/deploy');
     } catch (err) {
       console.error("Failed to save agent:", err);
       alert("Error: Could not save the agent.");
@@ -84,7 +86,14 @@ export default function Playground() {
 
       <div className="mt-8">
         {activeStep === 0 && (
-          <Step1APIModel apiKey={apiKey} setApiKey={setApiKey} provider={provider} setProvider={setProvider} model={model} setModel={setModel} />
+          <Step1APIModel 
+            apiKey={apiKey} 
+            setApiKey={setApiKey} 
+            provider={provider} 
+            setProvider={setProvider} 
+            modelName={modelName}       // ✅ Renamed prop
+            setModelName={setModelName}   // ✅ Renamed prop
+          />
         )}
         {activeStep === 1 && (
           <Step2Customization

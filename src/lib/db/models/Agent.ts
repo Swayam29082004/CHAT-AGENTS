@@ -7,7 +7,7 @@ export interface IAgent extends Document {
   
   // Config
   provider?: "openai" | "anthropic" | "groq";
-  model?: string;
+  modelName?: string; // ✅ Renamed from 'model'
   
   // Customization
   avatar: string;
@@ -29,7 +29,7 @@ const AgentSchema = new Schema<IAgent>(
       default: 'Private' 
     },
     provider: { type: String, enum: ["openai", "anthropic", "groq"] },
-    model: { type: String },
+    modelName: { type: String }, // ✅ Renamed from 'model'
     avatar: { type: String, default: "/PHOTO_AGENT.jpg" },
     color: { type: String, default: "#4f46e5" },
     welcomeMessage: { type: String, default: "Hello! How can I help you today?" },

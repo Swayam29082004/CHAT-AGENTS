@@ -5,8 +5,8 @@ type Props = {
   setApiKey: (val: string) => void;
   provider: string;
   setProvider: (val: string) => void;
-  model: string;
-  setModel: (val: string) => void;
+  modelName: string;      // ✅ Renamed from 'model'
+  setModelName: (val: string) => void; // ✅ Renamed from 'setModel'
 };
 
 export default function Step1APIModel({
@@ -14,8 +14,8 @@ export default function Step1APIModel({
   setApiKey,
   provider,
   setProvider,
-  model,
-  setModel,
+  modelName,      // ✅ Renamed from 'model'
+  setModelName,   // ✅ Renamed from 'setModel'
 }: Props) {
   return (
     <section className="bg-white shadow rounded-lg p-6">
@@ -41,8 +41,8 @@ export default function Step1APIModel({
         </select>
 
         <select
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
+          value={modelName} // ✅ Renamed from 'model'
+          onChange={(e) => setModelName(e.target.value)} // ✅ Renamed from 'setModel'
           className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-500"
         >
           <option value="">Select Model</option>
