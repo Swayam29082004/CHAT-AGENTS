@@ -1,30 +1,40 @@
 // src/lib/services/agentService.ts
-
 export interface Agent {
   _id: string;
   name: string;
-  visibility: 'Public' | 'Private' | 'Unlisted';
   avatar: string;
+  
+}
+
+async function handleResponse(res: Response) {
+  if (!res.ok) {
+    let errMessage = "Request failed";
+    try {
+      const errData = await res.json();
+      errMessage = errData.error || errMessage;
+    } catch {
+      // ignore if not JSON
+    }
+    throw new Error(errMessage);
+  }
+  return res.json();
 }
 
 export async function fetchAgents(userId: string): Promise<Agent[]> {
   const res = await fetch(`/api/dashboard/playground/${userId}/agents`);
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.error || "Failed to fetch your agents.");
-  }
-  const data = await res.json();
+  const data = await handleResponse(res);
   return data.agents || [];
 }
 
-export async function deleteAgent(userId: string, agentId: string): Promise<void> {
-  const res = await fetch(`/api/dashboard/playground/${userId}/agents?agentId=${agentId}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.error || "Failed to delete agent.");
-  }
+export async function deleteAgent(
+  userId: string,
+  agentId: string
+): Promise<void> {
+  const res = await fetch(
+    `/api/dashboard/playground/${userId}/agents?agentId=${agentId}`,
+    { method: "DELETE" }
+  );
+  await handleResponse(res);
 }
 
 export async function editAgent(
@@ -37,12 +47,6 @@ export async function editAgent(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ agentId, ...updates }),
   });
-
-  if (!res.ok) {
-    const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.error || "Failed to update agent.");
-  }
-
-  const data = await res.json();
-  return data.agent;
+  const data = await handleResponse(res);
+  return data.agent as Agent;
 }

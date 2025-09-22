@@ -1,25 +1,39 @@
+// src/app/api/dashboard/playground/[userId]/agents/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db/mongodb";
 import Agent from "@/lib/db/models/Agent";
 import mongoose from "mongoose";
 
 // CREATE
-export async function POST(req: NextRequest, { params }: { params: { userId: string } }) {
+export async function POST(
+  req: NextRequest,
+  context: { params: Promise<{ userId: string }> }
+) {
   try {
     await connectDB();
-    const { userId } = params;
+    const { userId } = await context.params; // ✅ await
+
     const body = await req.json();
-    const { name, provider, modelName, avatar, color, welcomeMessage, placeholderText, visibility } = body;
+    const {
+      name,
+      provider,
+      modelName,
+      avatar,
+      color,
+      welcomeMessage,
+      placeholderText,
+      visibility,
+    } = body;
 
     if (!name || !provider || !modelName) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
+    if (!mongoose.Types.ObjectId.isValid(userId.trim())) {
       return NextResponse.json({ error: "Invalid userId format" }, { status: 400 });
     }
 
     const newAgent = await Agent.create({
-      userId,
+      userId: userId.trim(),
       name,
       provider,
       modelName,
@@ -38,16 +52,19 @@ export async function POST(req: NextRequest, { params }: { params: { userId: str
 }
 
 // READ ALL
-export async function GET(req: NextRequest, { params }: { params: { userId: string } }) {
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ userId: string }> }
+) {
   try {
     await connectDB();
-    const { userId } = params;
+    const { userId } = await context.params; // ✅ await
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
+    if (!mongoose.Types.ObjectId.isValid(userId.trim())) {
       return NextResponse.json({ error: "Invalid userId format" }, { status: 400 });
     }
 
-    const agents = await Agent.find({ userId }).lean();
+    const agents = await Agent.find({ userId: userId.trim() }).lean();
     return NextResponse.json({ success: true, agents });
   } catch (err: any) {
     console.error("Agent fetch error:", err);
@@ -56,23 +73,39 @@ export async function GET(req: NextRequest, { params }: { params: { userId: stri
 }
 
 // UPDATE
-export async function PATCH(req: NextRequest, { params }: { params: { userId: string } }) {
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ userId: string }> }
+) {
   try {
     await connectDB();
-    const { userId } = params;
-    const body = await req.json();
-    const { agentId, ...updates } = body;
+    const { userId } = await context.params; // ✅ await
+
+    let body = {};
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid or missing JSON body" },
+        { status: 400 }
+      );
+    }
+
+    const { agentId, ...updates } = body as any;
 
     if (!agentId) {
       return NextResponse.json({ error: "Missing agentId" }, { status: 400 });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(agentId)) {
+    if (
+      !mongoose.Types.ObjectId.isValid(userId.trim()) ||
+      !mongoose.Types.ObjectId.isValid(agentId.trim())
+    ) {
       return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
     }
 
     const updatedAgent = await Agent.findOneAndUpdate(
-      { _id: agentId, userId },
+      { _id: agentId.trim(), userId: userId.trim() },
       { $set: updates },
       { new: true }
     );
@@ -89,10 +122,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
 }
 
 // DELETE
-export async function DELETE(req: NextRequest, { params }: { params: { userId: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ userId: string }> }
+) {
   try {
     await connectDB();
-    const { userId } = params;
+    const { userId } = await context.params; // ✅ await
     const { searchParams } = new URL(req.url);
     const agentId = searchParams.get("agentId");
 
@@ -100,11 +136,17 @@ export async function DELETE(req: NextRequest, { params }: { params: { userId: s
       return NextResponse.json({ error: "Missing agentId" }, { status: 400 });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(agentId)) {
+    if (
+      !mongoose.Types.ObjectId.isValid(userId.trim()) ||
+      !mongoose.Types.ObjectId.isValid(agentId.trim())
+    ) {
       return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
     }
 
-    const deletedAgent = await Agent.findOneAndDelete({ _id: agentId, userId });
+    const deletedAgent = await Agent.findOneAndDelete({
+      _id: agentId.trim(),
+      userId: userId.trim(),
+    });
 
     if (!deletedAgent) {
       return NextResponse.json({ error: "Agent not found" }, { status: 404 });

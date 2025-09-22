@@ -1,3 +1,4 @@
+// src/lib/db/models/Agent.ts
 import mongoose, { Document, Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 
@@ -5,9 +6,8 @@ export interface IAgent extends Document {
   userId: mongoose.Types.ObjectId;
   uuid: string;
   name: string;
-  visibility: "Public" | "Private" | "Unlisted";
-  provider?: string;
-  modelName?: string;
+  provider: string;
+  modelName: string;
   avatar?: string;
   color?: string;
   welcomeMessage?: string;
@@ -17,9 +17,8 @@ export interface IAgent extends Document {
 const AgentSchema = new Schema<IAgent>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    uuid: { type: String, unique: true, required: true, default: uuidv4 },
+    uuid: { type: String, unique: true, required: true, default: () => uuidv4() }, // ✅ fixed
     name: { type: String, required: true },
-    visibility: { type: String, enum: ["Public", "Private", "Unlisted"], default: "Private" },
     provider: { type: String, required: true },
     modelName: { type: String, required: true },
     avatar: { type: String, default: "/PHOTO_AGENT.jpg" },
