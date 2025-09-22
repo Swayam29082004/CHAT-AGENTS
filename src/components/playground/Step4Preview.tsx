@@ -1,11 +1,14 @@
-'use client';
-import { useState, useRef, useEffect, FormEvent } from 'react';
+// --- Step4Preview.tsx ---
+"use client";
+
+import React, { useState, useRef, useEffect, FormEvent } from 'react';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPaperPlane, faSync, faUser, faComments, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatUser {
   username: string;
+  id?: string;
 }
 
 interface Message {
@@ -20,6 +23,7 @@ type Props = {
   avatar: string;
   welcomeMessage: string;
   placeholderText: string;
+  agentId?: string | null;
 };
 
 function ChatMessage({ message, user, agentName, agentAvatar, userColor }: { 
@@ -59,7 +63,7 @@ function ChatMessage({ message, user, agentName, agentAvatar, userColor }: {
   );
 }
 
-export default function Step4Preview({ color, agentName, avatar, welcomeMessage, placeholderText }: Props) {
+export default function Step4Preview({ color, agentName, avatar, welcomeMessage, placeholderText, agentId }: Props) {
   const [user, setUser] = useState<ChatUser | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: welcomeMessage || "Hello! How can I help you today?" }
@@ -68,6 +72,11 @@ export default function Step4Preview({ color, agentName, avatar, welcomeMessage,
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // --- Checkpoint B: log the agentId prop when this component mounts or when it changes ---
+  useEffect(() => {
+    console.log(`[Step4Preview - Mount/Prop] Received agentId prop: ${agentId}`);
+  }, [agentId]);
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -90,27 +99,48 @@ export default function Step4Preview({ color, agentName, avatar, welcomeMessage,
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-    const userMessage: Message = { role: 'user', content: input };
+    const msgContent = input;
+
+    // Add the user's message locally right away
+    const userMessage: Message = { role: 'user', content: msgContent };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+
     try {
       const userData = localStorage.getItem("user");
       if (!userData) throw new Error("You must be logged in to chat.");
       const parsedUser = JSON.parse(userData);
+
+      // --- Checkpoint C: log right before the API call ---
+      console.log(`[Step4Preview - Before API] query=\"${msgContent}\", agentId=${agentId}, userId=${parsedUser.id}`);
+
+      if (!agentId) {
+        // Defensive: short-circuit if agentId missing and show an informative assistant message
+        const missingMsg: Message = { role: 'assistant', content: '❌ Agent ID is missing. Please save your agent before trying the preview.' };
+        setMessages((prev) => [...prev, missingMsg]);
+        setIsLoading(false);
+        return;
+      }
+
       const response = await fetch('/api/rag-query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: input, userId: parsedUser.id }),
+        body: JSON.stringify({ query: msgContent, userId: parsedUser.id, agentId }),
       });
+
       if (!response.ok) {
-        const errData = await response.json();
+        const errData = await response.json().catch(() => ({}));
+        console.error('[Step4Preview - API] Non-OK response', { status: response.status, body: errData });
         throw new Error(errData.error || 'Failed to get a response from the agent.');
       }
+
       const data = await response.json();
-      const assistantMessage: Message = { role: 'assistant', content: data.answer, sources: data.sources };
+      console.log('[Step4Preview - API] Success response', data);
+      const assistantMessage: Message = { role: 'assistant', content: data.answer || 'Sorry, the agent returned an empty response.', sources: data.sources };
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
+      console.error('[Step4Preview - API Error]', error);
       const message = error instanceof Error ? error.message : "Sorry, something went wrong.";
       setMessages(prev => [...prev, { role: 'assistant', content: message }]);
     } finally {

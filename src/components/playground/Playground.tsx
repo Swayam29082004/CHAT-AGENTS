@@ -1,13 +1,15 @@
+// --- Playground.tsx ---
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation"; 
+
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import PlaygroundStepper from "./PlaygroundStepper";
 import Step1APIModel from "./Step1APIModel";
 import Step2Customization from "./Step2Customization";
 import Step3ScrapingRAG from "./Step3ScrapingRAG";
 import Step4Preview from "./Step4Preview";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft, faArrowRight, faFloppyDisk, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faArrowRight, faSpinner, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
 
 export default function Playground() {
   const [activeStep, setActiveStep] = useState(0);
@@ -22,70 +24,104 @@ export default function Playground() {
   const [color, setColor] = useState("#4f46e5");
   const [welcomeMessage, setWelcomeMessage] = useState("Hello! How can I help you today?");
   const [placeholderText, setPlaceholderText] = useState("Ask a question...");
+  const [agentId, setAgentId] = useState<string | null>(null);
 
-  // --- State for UI ---
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const steps = ["API & Model", "Customization", "Scraping + RAG", "Preview"];
 
-  const handleNext = () => {
-    if (activeStep < steps.length - 1) setActiveStep((prev) => prev + 1);
+  // --- Debug: log whenever activeStep or agentId changes ---
+  useEffect(() => {
+    console.log(`[Playground - State] activeStep=${activeStep}, agentId=${agentId}`);
+  }, [activeStep, agentId]);
+
+  // ✅ THE FIX: We now use useEffect to move to the next step ONLY AFTER agentId is confirmed.
+  useEffect(() => {
+    // This effect runs only when agentId changes from null to a real value.
+    if (agentId && activeStep === 1) {
+      console.log(`[Playground - Post-Save Effect] agentId is now set to: ${agentId}. Moving to Step 2 (Scraping + RAG).`);
+      setActiveStep(2); // Move to Scraping step (index 2)
+    }
+  }, [agentId, activeStep]);
+
+  // Extra debug when about to render preview
+  useEffect(() => {
+    if (activeStep === 3) {
+      console.log(`[Playground - Render] About to render Step4Preview with agentId=${agentId}`);
+    }
+  }, [activeStep, agentId]);
+
+  const handleNextAndSave = async () => {
+    // If we are on Step 2 (index 1), we save the agent.
+    if (activeStep === 1) {
+      setIsSaving(true);
+      setSaveError(null);
+
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!user?.id) {
+        setSaveError("❌ You must be logged in to save an agent.");
+        setIsSaving(false);
+        return;
+      }
+
+      const agentData = {
+        userId: user.id,
+        name: agentName,
+        provider,
+        modelName,
+        avatar,
+        color,
+        welcomeMessage,
+        placeholderText,
+        visibility: "Private",
+      };
+
+      try {
+        console.log("[Playground - Save Action] Saving agent to backend...", { agentData, userId: user.id });
+        const response = await fetch(`/api/dashboard/playground/${user.id}/agents`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(agentData),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          console.error("[Playground - Save Action] Backend returned error:", data);
+          throw new Error(data.error || "Could not save the agent.");
+        }
+
+        // Be robust about where the ID might live in the response
+        const newAgentId = data?.agent?._id || data?.agent?.id || data?.id || null;
+        if (!newAgentId) {
+          console.error("[Playground - Save Action] No agent id found in response:", data);
+          throw new Error("No agent id returned from server.");
+        }
+
+        console.log(`[Playground - Save Action] Agent saved. Received ID: ${newAgentId}. Setting state (setAgentId).`);
+        setAgentId(newAgentId);
+
+        // Note: do NOT advance the step here — the useEffect above will move us when agentId is actually set.
+      } catch (err: any) {
+        console.error("[Playground - Save Action] Exception:", err);
+        setSaveError(err.message || "❌ Something went wrong while saving.");
+      } finally {
+        setIsSaving(false);
+      }
+    }
+    // For all other steps, just move to the next one.
+    else if (activeStep < steps.length - 1) {
+      console.log(`[Playground - Navigation] Advancing from step ${activeStep} to ${activeStep + 1}`);
+      setActiveStep((prev) => prev + 1);
+    }
   };
 
   const handleBack = () => {
     if (activeStep > 0) setActiveStep((prev) => prev - 1);
   };
 
-  const handleSaveAgent = async () => {
-    setIsSaving(true);
-    setSaveError(null);
-
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (!user?.id) {
-      setSaveError("❌ You must be logged in to save an agent.");
-      setIsSaving(false);
-      return;
-    }
-
-    const agentData = {
-      userId: user.id,
-      name: agentName,
-      provider,
-      modelName,
-      avatar,
-      color,
-      welcomeMessage,
-      placeholderText,
-      visibility: "Private"
-    };
-
-    try {
-      // ✅ Corrected API path
-      const response = await fetch(`/api/dashboard/playground/${user.id}/agents`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(agentData),
-      });
-
-      const rawText = await response.text();
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch {
-        throw new Error(`Server did not return valid JSON. Raw response: ${rawText}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || "Could not save the agent.");
-      }
-
-      router.push("/dashboard/deploy");
-    } catch (err: any) {
-      setSaveError(err.message || "❌ Something went wrong while saving.");
-    } finally {
-      setIsSaving(false);
-    }
+  const handleFinish = () => {
+    router.push("/dashboard/deploy");
   };
 
   return (
@@ -95,32 +131,10 @@ export default function Playground() {
       <PlaygroundStepper steps={steps} activeStep={activeStep} />
 
       <div className="mt-8">
-        {activeStep === 0 && (
-          <Step1APIModel
-            apiKey={apiKey} setApiKey={setApiKey}
-            provider={provider} setProvider={setProvider}
-            modelName={modelName} setModelName={setModelName}
-          />
-        )}
-        {activeStep === 1 && (
-          <Step2Customization
-            agentName={agentName} setAgentName={setAgentName}
-            avatar={avatar} setAvatar={setAvatar}
-            color={color} setColor={setColor}
-            welcomeMessage={welcomeMessage} setWelcomeMessage={setWelcomeMessage}
-            placeholderText={placeholderText} setPlaceholderText={setPlaceholderText}
-          />
-        )}
-        {activeStep === 2 && <Step3ScrapingRAG />}
-        {activeStep === 3 && (
-          <Step4Preview
-            agentName={agentName}
-            avatar={avatar}
-            color={color}
-            welcomeMessage={welcomeMessage}
-            placeholderText={placeholderText}
-          />
-        )}
+        {activeStep === 0 && <Step1APIModel {...{ apiKey, setApiKey, provider, setProvider, modelName, setModelName }} />}
+        {activeStep === 1 && <Step2Customization {...{ agentName, setAgentName, avatar, setAvatar, color, setColor, welcomeMessage, setWelcomeMessage, placeholderText, setPlaceholderText }} />}
+        {activeStep === 2 && <Step3ScrapingRAG agentId={agentId} />}
+        {activeStep === 3 && <Step4Preview {...{ agentName, avatar, color, welcomeMessage, placeholderText, agentId }} />}
       </div>
 
       <div className="mt-8 flex justify-between">
@@ -133,24 +147,19 @@ export default function Playground() {
         </button>
 
         {activeStep === steps.length - 1 ? (
-          <button
-            onClick={handleSaveAgent}
-            disabled={isSaving}
-            className="btn-primary bg-green-600 hover:bg-green-700 disabled:opacity-50"
-          >
-            {isSaving ? (
-              <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
-            ) : (
-              <FontAwesomeIcon icon={faFloppyDisk} className="mr-2" />
-            )}
-            {isSaving ? "Saving..." : "Save Agent"}
+          <button onClick={handleFinish} className="btn-primary bg-green-600 hover:bg-green-700">
+            <FontAwesomeIcon icon={faCheckCircle} className="mr-2" /> Finish & View Agents
           </button>
         ) : (
-          <button onClick={handleNext} className="btn-primary">
-            Next <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
+          <button onClick={handleNextAndSave} className="btn-primary" disabled={isSaving}>
+            {isSaving ? <FontAwesomeIcon icon={faSpinner} spin className="mr-2" /> : null}
+            {activeStep === 1 ? (isSaving ? "Saving..." : "Save & Continue") : "Next"}
+            {!isSaving && <FontAwesomeIcon icon={faArrowRight} className="ml-2" />}
           </button>
         )}
       </div>
     </div>
   );
 }
+
+

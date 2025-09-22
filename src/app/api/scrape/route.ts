@@ -5,17 +5,17 @@ import { DataProcessor } from "@/lib/services/dataProcessor";
 import { EmbeddingService } from "@/lib/services/embeddingService";
 import { PineconeService } from "@/lib/services/pineconeService";
 import mongoose from "mongoose";
-
+// Options to scrape a React/CSR website Tools like Puppeteer or Playwright
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
-    const { url, userId } = await req.json();
+    const { url, userId, agentId } = await req.json();
 
-    if (!url || !userId) {
-      return NextResponse.json({ error: "URL and userId are required" }, { status: 400 });
+    if (!url || !userId || !agentId) {
+      return NextResponse.json({ error: "URL, userId, and agentId are required" }, { status: 400 });
     }
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return NextResponse.json({ error: "Invalid userId format" }, { status: 400 });
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(agentId)) {
+      return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
     }
     
     // --- 1. SCRAPE ---
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const chunks = processor.process(response.data, url);
     
     if (chunks.length === 0) {
-        return NextResponse.json({ success: true, message: "No content was found to process on the page." });
+        return NextResponse.json({ success: true, message: "No content was found to process." });
     }
 
     // --- 3. EMBED ---
@@ -49,27 +49,27 @@ export async function POST(req: NextRequest) {
     const chunkTexts = chunks.map(chunk => chunk.text);
     const embeddings = await embeddingService.generateEmbeddings(chunkTexts);
 
-    // --- 4. PREPARE & STORE VECTORS IN PINECONE ---
+    // --- 4. PREPARE & STORE VECTORS ---
     const pineconeService = new PineconeService();
     const vectorsToUpsert = chunks.map((chunk, index) => ({
       id: chunk.id,
       values: embeddings[index],
       metadata: {
-        // ✅ CRITICAL: Store userId in metadata for filtering later
         userId: userId, 
+        // ✅ This is the critical piece: the agentId is stored with the data
+        agentId: agentId,
         sourceUrl: chunk.metadata.source,
-        textSnippet: chunk.text.substring(0, 500), // A preview of the text
+        textSnippet: chunk.text.substring(0, 500),
       },
     }));
 
     await pineconeService.upsert(vectorsToUpsert);
 
-    console.log(`[Scrape API] Stored ${chunks.length} vector embeddings in Pinecone for userId: ${userId}.`);
+    console.log(`[Scrape API] Stored ${chunks.length} vectors in Pinecone for agentId: ${agentId}.`);
     
     return NextResponse.json({ 
         success: true, 
         message: `Successfully processed and stored ${chunks.length} document chunks.`,
-        summary: chunks[0].text.slice(0, 500) + '...',
     });
 
   } catch (err: unknown) {
@@ -87,3 +87,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

@@ -10,31 +10,27 @@ const ProgressBar = ({ progress }: { progress: number }) => (
   </div>
 );
 
-export default function Step3ScrapingRAG() {
+// ✅ THE FIX: Component now accepts agentId as a prop
+export default function Step3ScrapingRAG({ agentId }: { agentId: string | null }) {
   const [url, setUrl] = useState<string>("");
   const [scrapedUrl, setScrapedUrl] = useState<string>("");
-
-  // States for scraping process
   const [isScraping, setIsScraping] = useState<boolean>(false);
   const [scrapeResult, setScrapeResult] = useState<{ type: 'success' | 'error'; message: string; time?: number } | null>(null);
   const [scrapeProgress, setScrapeProgress] = useState<number>(0);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // States for summarizing process
+  // ... (other state variables remain the same)
   const [isSummarizing, setIsSummarizing] = useState<boolean>(false);
   const [summary, setSummary] = useState<string | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
 
-  // Effect to clean up interval if component unmounts
   useEffect(() => {
     return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
     };
   }, []);
 
   const startProgressSimulator = (setter: React.Dispatch<React.SetStateAction<number>>) => {
+    // ... (this helper function remains the same)
     if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
     setter(0);
     progressIntervalRef.current = setInterval(() => {
@@ -50,8 +46,9 @@ export default function Step3ScrapingRAG() {
 
   const handleScrapeSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!url.trim()) {
-      setScrapeResult({ type: 'error', message: 'Please enter a valid URL.' });
+    // ✅ Check for agentId before proceeding
+    if (!agentId) {
+      setScrapeResult({ type: 'error', message: 'Could not find a valid Agent ID. Please go back and save the agent first.' });
       return;
     }
     const userData = localStorage.getItem('user');
@@ -63,8 +60,6 @@ export default function Step3ScrapingRAG() {
 
     setIsScraping(true);
     setScrapeResult(null);
-    setSummary(null);
-    setSummaryError(null);
     setScrapedUrl("");
     startProgressSimulator(setScrapeProgress);
     const startTime = Date.now();
@@ -73,7 +68,8 @@ export default function Step3ScrapingRAG() {
       const res = await fetch("/api/scrape", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, userId: user.id }),
+        // ✅ THE FIX: Include the agentId in the request body
+        body: JSON.stringify({ url, userId: user.id, agentId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to process the website.");
@@ -87,44 +83,52 @@ export default function Step3ScrapingRAG() {
     } finally {
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
       setScrapeProgress(100);
-      setTimeout(() => setIsScraping(false), 1000); // Show 100% for a second
+      setTimeout(() => setIsScraping(false), 1000);
     }
   };
 
   const handleSummarizeClick = async () => {
-    if (!scrapedUrl) return;
-
-    setIsSummarizing(true);
-    setSummary(null);
-    setSummaryError(null);
-
-    try {
-      const res = await fetch('/api/summarize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: scrapedUrl }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to generate summary.");
-      setSummary(data.summary);
-    } catch (err: any) {
-      setSummaryError(err.message || "An unexpected error occurred.");
-    } finally {
-      setIsSummarizing(false);
-    }
+      // ... (this function remains the same)
+      if (!scrapedUrl) return;
+      setIsSummarizing(true);
+      setSummary(null);
+      setSummaryError(null);
+      try {
+        const res = await fetch('/api/summarize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: scrapedUrl }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to generate summary.");
+        setSummary(data.summary);
+      } catch (err: any) {
+        setSummaryError(err.message || "An unexpected error occurred.");
+      } finally {
+        setIsSummarizing(false);
+      }
   };
+
+  if (!agentId) {
+    return (
+        <section className="bg-white shadow rounded-lg p-6 text-center">
+            <h2 className="text-xl font-semibold mb-2 text-yellow-600">Please Save Your Agent First</h2>
+            <p className="text-gray-600">Go back to the previous step to save your agent's configuration. This will generate an Agent ID needed to add knowledge.</p>
+        </section>
+    );
+  }
 
   return (
     <section className="bg-white shadow rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-2">Step 3: Scrape Content & Summarize</h2>
+      <h2 className="text-xl font-semibold mb-2">Step 3: Add Knowledge to Your Agent</h2>
       <p className="text-gray-600 mb-4">
-        Scrape a website to create a knowledge base. You can then generate an AI summary.
+        Scrape websites to create a knowledge base. Your agent will use this data to answer questions.
       </p>
 
       <form onSubmit={handleScrapeSubmit} className="flex flex-col sm:flex-row gap-2 mb-4">
         <input
           type="url"
-          placeholder="https://books.toscrape.com"
+          placeholder="https://example.com/faq"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           className="form-input flex-1"
@@ -135,7 +139,8 @@ export default function Step3ScrapingRAG() {
           {isScraping ? "Scraping..." : "Scrape & Embed"}
         </button>
       </form>
-
+      
+      {/* ... (rest of the JSX for displaying results remains the same) ... */}
       {isScraping && (
         <div className="mt-4 p-4 rounded-lg bg-blue-50 border border-blue-200">
             <p className="text-sm font-semibold text-blue-800">Extracting content, please wait...</p>
@@ -143,7 +148,6 @@ export default function Step3ScrapingRAG() {
             <p className="text-xs text-blue-700 text-right">{Math.round(scrapeProgress)}% Complete</p>
         </div>
       )}
-
       {scrapeResult && !isScraping && (
         <div className={`mt-4 p-4 rounded-lg ${scrapeResult.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
           <h3 className="font-bold">{scrapeResult.type === 'success' ? `✅ Scrape Successful! (Completed in ${scrapeResult.time}s)` : '❌ Error'}</h3>
@@ -162,14 +166,12 @@ export default function Step3ScrapingRAG() {
           )}
         </div>
       )}
-      
       {summaryError && (
           <div className="mt-4 p-4 rounded-lg bg-red-50 border-red-200 text-red-800">
               <h3 className="font-bold">❌ Summary Failed</h3>
               <p className="text-sm mt-1">{summaryError}</p>
           </div>
       )}
-
       {summary && (
         <div className="mt-4">
           <h3 className="text-lg font-semibold text-gray-800 mb-2">Generated Summary</h3>
