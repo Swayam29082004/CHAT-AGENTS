@@ -1,6 +1,6 @@
 {
   "name": "@swayam29082004/chat-sdk",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "A React SDK for embedding a RAG-powered chat agent.",
   "private": false,
   "type": "module",
