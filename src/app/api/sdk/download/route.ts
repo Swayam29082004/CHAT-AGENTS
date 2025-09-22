@@ -26,44 +26,50 @@ async function addFilesToZip(zip: JSZip, directoryPath: string, basePath: string
   }
 }
 
-
 export async function GET(req: NextRequest) {
   try {
     const zip = new JSZip();
     const sdkRootPath = path.join(process.cwd(), "chat-sdk");
-    
+
     // Add all files from the chat-sdk directory to the zip
     await addFilesToZip(zip, sdkRootPath, "");
 
     // Generate the ZIP file as a buffer
-    const zipBuffer = await zip.generateAsync({ 
-        type: "nodebuffer",
-        compression: "DEFLATE",
-        compressionOptions: {
-            level: 9
-        }
+    const zipBuffer = await zip.generateAsync({
+      type: "nodebuffer",
+      compression: "DEFLATE",
+      compressionOptions: { level: 9 },
     });
 
     // Send the ZIP file as the response
-    return new NextResponse(zipBuffer, {
+    return new NextResponse(new Uint8Array(zipBuffer), {
       status: 200,
       headers: {
         "Content-Type": "application/zip",
         "Content-Disposition": `attachment; filename="chat-sdk-source.zip"`,
       },
     });
-
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[SDK DOWNLOAD ERROR]:", error);
-    // Check for common file-not-found error
-    if (error.code === 'ENOENT') {
-        return NextResponse.json(
-            { error: "SDK source directory not found on the server.", details: "Ensure the 'chat-sdk' folder exists at the project root." },
-            { status: 404 }
-        );
+
+    // Narrow type for filesystem errors
+    if (
+      error instanceof Error &&
+      (error as NodeJS.ErrnoException).code === "ENOENT"
+    ) {
+      return NextResponse.json(
+        {
+          error: "SDK source directory not found on the server.",
+          details:
+            "Ensure the 'chat-sdk' folder exists at the project root.",
+        },
+        { status: 404 }
+      );
     }
+
+    const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to package the SDK source.", details: error.message },
+      { error: "Failed to package the SDK source.", details: message },
       { status: 500 }
     );
   }
