@@ -52,15 +52,48 @@ export default function DeployPage() {
     loadAgents();
   }, []);
 
-  // --- CRUD Handlers (No changes here) ---
-  const handleDelete = async (agentId: string) => { /* ... */ };
-  const handleEditStart = (agent: Agent) => { /* ... */ };
-  const handleEditCancel = () => { /* ... */ };
-  const handleEditSave = async (agentId: string) => { /* ... */ };
+  const handleDelete = async (agentId: string) => {
+    // ✅ VALIDATION: Confirm before deleting
+    if (!window.confirm("Are you sure you want to delete this agent?")) {
+      return;
+    }
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (!user?.id) return;
+    try {
+      await deleteAgent(user.id, agentId);
+      // Remove the agent from the local state to update the UI
+      setAgents((prev) => prev.filter((a) => a._id !== agentId));
+    } catch (err: any) {
+      alert(err.message || "❌ Failed to delete agent");
+    }
+  };
 
-  // --- SDK Download Handler ---
+  const handleEditStart = (agent: Agent) => {
+    setEditingId(agent._id);
+    setEditName(agent.name);
+  };
+
+  const handleEditCancel = () => {
+    setEditingId(null);
+    setEditName("");
+  };
+
+  const handleEditSave = async (agentId: string) => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (!user?.id) return;
+    try {
+      const updated = await editAgent(user.id, agentId, { name: editName });
+      setAgents((prev) =>
+        prev.map((a) => (a._id === agentId ? updated : a))
+      );
+      handleEditCancel();
+    } catch (err: any) {
+      alert(err.message || "❌ Failed to update agent");
+    }
+  };
+
   const handleDownloadSource = async (agentId: string) => {
-    setDownloadingId(agentId); // Set the specific ID
+    setDownloadingId(agentId);
     try {
       const response = await fetch(`/api/sdk/download`);
       if (!response.ok) {
@@ -79,7 +112,7 @@ export default function DeployPage() {
       console.error(error);
       alert("Could not download the SDK source.");
     } finally {
-      setDownloadingId(null); // Clear the ID when done
+      setDownloadingId(null);
     }
   };
 
@@ -113,7 +146,6 @@ export default function DeployPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-3">
-                  {/* Edit/Delete Buttons */}
                   {editingId === agent._id ? (
                     <>
                       <button onClick={() => handleEditSave(agent._id)} className="text-green-600 hover:text-green-800"><FontAwesomeIcon icon={faCheck} /></button>
@@ -126,7 +158,6 @@ export default function DeployPage() {
                   
                   <div className="border-l h-6 mx-2"></div>
                   
-                  {/* Embed Button */}
                   <button
                     onClick={() => setEmbeddingAgent(agent)}
                     className="btn-primary flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
@@ -135,20 +166,16 @@ export default function DeployPage() {
                      Embed
                   </button>
 
-                  {/* ✅ FIX IS HERE: Download Source Button */}
                   <button
                     onClick={() => handleDownloadSource(agent._id)}
-                    // The check now compares against the specific agent's ID
                     disabled={downloadingId === agent._id} 
                     className="btn-primary flex items-center gap-2"
                   >
-                    {/* The icon now only shows if this specific agent is downloading */}
                     {downloadingId === agent._id ? (
                       <FontAwesomeIcon icon={faSpinner} spin />
                     ) : (
                       <FontAwesomeIcon icon={faDownload} />
                     )}
-                    {/* The text now only changes if this specific agent is downloading */}
                     {downloadingId === agent._id
                       ? "Packaging..."
                       : "Download Source"}
@@ -174,4 +201,3 @@ export default function DeployPage() {
     </>
   );
 }
-
