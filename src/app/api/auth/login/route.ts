@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB();
 
-    const { email, password } = await request.json();
+    const { email, password }: { email: string; password: string } = await request.json();
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
@@ -22,18 +22,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    // ✅ FIX: Create a clean user object for the frontend.
-    // This renames '_id' to 'id' and converts it to a string.
-    const userToReturn = {
-      id: user._id.toString(), 
-      username: user.username,
-      email: user.email,
-    };
-
-    return NextResponse.json({ success: true, user: userToReturn }, { status: 200 });
-
-  } catch (error) {
-    console.error("Login error:", error);
+    return NextResponse.json(
+      {
+        success: true,
+        user: { id: user._id.toString(), username: user.username, email: user.email },
+      },
+      { status: 200 }
+    );
+  } catch (err: unknown) {
+    console.error("Login error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

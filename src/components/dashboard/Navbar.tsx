@@ -18,7 +18,7 @@ export default function Navbar() {
       {/* Logo + Title */}
       <div className="flex items-center gap-2">
         <FontAwesomeIcon icon={faComments} className="text-indigo-600 w-6 h-6" />
-        <h1 className="text-xl font-semibold">Chat Agent Platform</h1>
+        <h1 className="text-xl font-semibold"> Contenstack Chat Agent </h1>
       </div>
 
       {/* Logout Button */}

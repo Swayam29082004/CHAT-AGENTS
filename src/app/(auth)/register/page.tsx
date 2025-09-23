@@ -39,15 +39,20 @@ export default function RegisterPage() {
         }),
       });
 
-      const data = await response.json();
+      const data: { success?: boolean; error?: string } = await response.json();
+
       if (response.ok && data.success) {
-        setSuccess('✅ Account created successfully! Redirecting to login...');
+        setSuccess('✅ Account created successfully! Redirecting...');
         setTimeout(() => router.push('/login'), 2000);
       } else {
         setError(data.error || 'Registration failed');
       }
-    } catch {
-      setError('Network error. Please try again.');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Network error. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +71,7 @@ export default function RegisterPage() {
               href="/login"
               className="font-medium text-indigo-600 hover:text-indigo-500"
             >
-              sign in to an existing account
+              sign in to existing account
             </Link>
           </p>
         </div>
@@ -143,7 +148,7 @@ export default function RegisterPage() {
 
           <div>
             <button type="submit" disabled={isLoading} className="btn-primary w-full">
-              {isLoading ? 'Creating account...' : 'Create Account'}
+              {isLoading ? 'Creating account...' : 'Create account'}
             </button>
           </div>
         </form>
