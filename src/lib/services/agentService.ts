@@ -1,9 +1,8 @@
-// src/lib/services/agentService.ts
 export interface Agent {
   _id: string;
   name: string;
   avatar: string;
-  
+  createdAt: string;
 }
 
 async function handleResponse(res: Response) {
