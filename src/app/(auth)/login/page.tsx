@@ -23,8 +23,14 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
+      
       if (response.ok && data.success) {
+        // ✅ THIS IS THE CRITICAL FIX ✅
+        // This line saves the user's data to the browser's local storage.
+        // Your login API must return a user object with an 'id'.
         localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Now that the user is saved, redirect to the dashboard.
         router.push('/dashboard');
       } else {
         setError(data.error || 'Login failed');
@@ -53,10 +59,8 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
-
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && <div className="alert-error">{error}</div>}
-
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -73,7 +77,6 @@ export default function LoginPage() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
-
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -90,7 +93,6 @@ export default function LoginPage() {
               />
             </div>
           </div>
-
           <div className="flex items-center justify-between">
             <Link
               href="/forgot-password"
@@ -99,7 +101,6 @@ export default function LoginPage() {
               Forgot your password?
             </Link>
           </div>
-
           <div>
             <button type="submit" disabled={isLoading} className="btn-primary w-full">
               {isLoading ? 'Signing in...' : 'Sign in'}

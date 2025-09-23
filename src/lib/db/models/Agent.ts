@@ -1,4 +1,3 @@
-// src/lib/db/models/Agent.ts
 import mongoose, { Document, Schema } from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 
@@ -12,12 +11,13 @@ export interface IAgent extends Document {
   color?: string;
   welcomeMessage?: string;
   placeholderText?: string;
+  contentstackUid?: string; // ✅ ADD THIS FIELD
 }
 
 const AgentSchema = new Schema<IAgent>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    uuid: { type: String, unique: true, required: true, default: () => uuidv4() }, // ✅ fixed
+    uuid: { type: String, unique: true, required: true, default: () => uuidv4() },
     name: { type: String, required: true },
     provider: { type: String, required: true },
     modelName: { type: String, required: true },
@@ -25,6 +25,7 @@ const AgentSchema = new Schema<IAgent>(
     color: { type: String, default: "#4f46e5" },
     welcomeMessage: { type: String, default: "Hello! How can I help you today?" },
     placeholderText: { type: String, default: "Ask a question..." },
+    contentstackUid: { type: String, required: false }, // ✅ ADD THIS FIELD
   },
   { timestamps: true }
 );

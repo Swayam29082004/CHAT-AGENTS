@@ -39,7 +39,6 @@ export default function Sidebar() {
     { href: "/dashboard/app", label: "App", icon: faTachometerAlt },
     { href: "/dashboard/playground", label: "Playground", icon: faPlay },
     { href: "/dashboard/deploy", label: "Deploy", icon: faCloudUploadAlt },
-    { href: "/dashboard/history", label: "History", icon: faHistory },
     { href: "/dashboard/settings", label: "Settings", icon: faCog },
   ];
 

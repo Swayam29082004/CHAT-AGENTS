@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@contentstack/delivery-sdk": "^4.10.0",
+    "@contentstack/management": "^1.25.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@fortawesome/fontawesome-svg-core": "^7.0.1",
@@ -27,6 +29,7 @@
     "cloudinary": "^2.7.0",
     "contentstack": "^3.26.2",
     "date-fns": "^4.1.0",
+    "form-data": "^4.0.4",
     "framer-motion": "^12.23.15",
     "jsonwebtoken": "^9.0.2",
     "jszip": "^3.10.1",
