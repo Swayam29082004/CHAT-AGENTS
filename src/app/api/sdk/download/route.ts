@@ -1,76 +1,45 @@
+// /src/app/api/sdk/download/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 import JSZip from "jszip";
 
-// Helper function to recursively read files from a directory
-async function addFilesToZip(zip: JSZip, directoryPath: string, basePath: string) {
-  const files = await fs.readdir(directoryPath);
-
+async function addFilesToZip(zip: JSZip, dir: string, base: string) {
+  const files = await fs.readdir(dir);
   for (const file of files) {
-    const filePath = path.join(directoryPath, file);
+    const filePath = path.join(dir, file);
     const stat = await fs.stat(filePath);
-    const zipPath = path.join(basePath, file);
-
+    const zipPath = path.join(base, file);
     if (stat.isDirectory()) {
-      // Recursively add files from sub-directory
       const folder = zip.folder(file);
-      if (folder) {
-        await addFilesToZip(folder, filePath, "");
-      }
+      if (folder) await addFilesToZip(folder, filePath, "");
     } else {
-      // Add file to zip
       const content = await fs.readFile(filePath);
       zip.file(zipPath, content);
     }
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(_: NextRequest) {
   try {
     const zip = new JSZip();
-    const sdkRootPath = path.join(process.cwd(), "chat-sdk");
-
-    // Add all files from the chat-sdk directory to the zip
-    await addFilesToZip(zip, sdkRootPath, "");
-
-    // Generate the ZIP file as a buffer
-    const zipBuffer = await zip.generateAsync({
+    const sdkRoot = path.join(process.cwd(), "chat-sdk");
+    await addFilesToZip(zip, sdkRoot, "");
+    const buffer = await zip.generateAsync({
       type: "nodebuffer",
       compression: "DEFLATE",
       compressionOptions: { level: 9 },
     });
-
-    // Send the ZIP file as the response
-    return new NextResponse(new Uint8Array(zipBuffer), {
+    return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
         "Content-Type": "application/zip",
-        "Content-Disposition": `attachment; filename="chat-sdk-source.zip"`,
+        "Content-Disposition": 'attachment; filename="chat-sdk-source.zip"',
       },
     });
   } catch (error: unknown) {
-    console.error("[SDK DOWNLOAD ERROR]:", error);
-
-    // Narrow type for filesystem errors
-    if (
-      error instanceof Error &&
-      (error as NodeJS.ErrnoException).code === "ENOENT"
-    ) {
-      return NextResponse.json(
-        {
-          error: "SDK source directory not found on the server.",
-          details:
-            "Ensure the 'chat-sdk' folder exists at the project root.",
-        },
-        { status: 404 }
-      );
-    }
-
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json(
-      { error: "Failed to package the SDK source.", details: message },
-      { status: 500 }
-    );
+    const msg =
+      error instanceof Error ? error.message : "Failed to package SDK";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

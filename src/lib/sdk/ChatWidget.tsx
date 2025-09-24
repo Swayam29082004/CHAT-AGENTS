@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useRef, useState } from "react";
 import { useChatAgent } from "../hooks/useChatAgent";
 import "./ChatWidget.css"; // Import the CSS
@@ -6,6 +8,7 @@ interface ChatWidgetProps {
   apiUrl: string;
   agentId: string;
   apiKey?: string;
+  agentName?: string; // 
   welcomeMessage?: string;
   placeholderText?: string;
   themeColor?: string;
@@ -15,23 +18,18 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   apiUrl,
   agentId,
   apiKey,
+  agentName,
   welcomeMessage = "Hello! How can I help you today?",
   placeholderText = "Type your message...",
   themeColor = "#3B82F6",
 }) => {
-  const {
-    messages,
-    input,
-    isLoading,
-    setInput,
-    sendMessage,
-    setMessages,
-  } = useChatAgent({
-    apiUrl,
-    agentId,
-    apiKey,
-    initialMessages: [{ role: "assistant", content: welcomeMessage }],
-  });
+  const { messages, input, isLoading, setInput, sendMessage, setMessages } =
+    useChatAgent({
+      apiUrl,
+      agentId,
+      apiKey,
+      initialMessages: [{ role: "assistant", content: welcomeMessage }],
+    });
 
   const [isOpen, setIsOpen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -68,21 +66,22 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
         >
           <header className="chat-header">
             <div className="status-indicator"></div>
-            <h2>Agent</h2>
-            <button
-              className="close-button"
-              onClick={() => setIsOpen(false)}
-            >
+            {/* ✅ Show agentName if available, else default */}
+            <h2>{agentName || "Agent"}</h2>
+            <button className="close-button" onClick={() => setIsOpen(false)}>
               ✕
             </button>
           </header>
+
           <main className="chat-body">
             <div className="message-list">
               {messages.map((msg, index) => (
                 <div key={index} className={`message-wrapper ${msg.role}`}>
                   <div className={`message-bubble ${msg.role}`}>
                     <strong className="message-sender">
-                      {msg.role === "assistant" ? "Agent" : "User"}
+                      {msg.role === "assistant"
+                        ? agentName || "Agent"
+                        : "User"}
                     </strong>
                     <p
                       dangerouslySetInnerHTML={{
@@ -92,6 +91,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                   </div>
                 </div>
               ))}
+
               {isLoading && (
                 <div className="message-wrapper assistant">
                   <div className="message-bubble assistant loading-bubble">
@@ -110,6 +110,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
               <div ref={chatEndRef} />
             </div>
           </main>
+
           <footer className="chat-footer">
             <form onSubmit={sendMessage} className="chat-form">
               <input

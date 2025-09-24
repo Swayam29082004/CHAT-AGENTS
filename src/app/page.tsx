@@ -1,31 +1,31 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { motion } from 'framer-motion';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { motion } from "framer-motion";
 
 export default function LandingPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      router.push('/dashboard/app');
+    const userData = localStorage.getItem("user");
+    const user = userData ? JSON.parse(userData) : null;
+    if (user?.id) {
+      router.push("/");
     }
   }, [router]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-center p-4 relative overflow-hidden">
-      {/* Floating Glow Effect */}
       <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-400 opacity-30 blur-3xl rounded-full animate-pulse" />
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-pink-400 opacity-30 blur-3xl animate-pulse" />
+      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-pink-400 opacity-30 blur-3xl rounded-full animate-pulse" />
 
       <motion.div
         className="max-w-2xl p-10 rounded-2xl bg-white/80 shadow-2xl backdrop-blur-lg"
         initial={{ rotateY: 10, rotateX: 5, opacity: 0, scale: 0.9 }}
         animate={{ rotateY: 0, rotateX: 0, opacity: 1, scale: 1 }}
-        transition={{ duration: 1, ease: 'easeOut' }}
+        transition={{ duration: 1, ease: "easeOut" }}
         whileHover={{ rotateY: 5, rotateX: -5, scale: 1.05 }}
       >
         <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900">

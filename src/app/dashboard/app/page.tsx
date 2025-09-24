@@ -97,7 +97,6 @@ export default function AppPage() {
             className="p-6 bg-white rounded-xl shadow hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
           >
             <div className="flex flex-col items-center">
-              {/* Card Image */}
               <img
                 src={card.image}
                 alt={card.title}

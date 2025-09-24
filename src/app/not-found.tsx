@@ -5,9 +5,7 @@ import { motion } from "framer-motion";
 export default function NotFound() {
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-900 dark:to-gray-800">
-      {/* 404 with 3D spinning 0 */}
       <div className="flex items-center text-7xl md:text-9xl font-extrabold">
-        {/* First 4 */}
         <motion.span
           className="text-indigo-600"
           initial={{ rotateY: -90, opacity: 0 }}
@@ -17,7 +15,6 @@ export default function NotFound() {
           4
         </motion.span>
 
-        {/* Animated 3D "0" */}
         <motion.span
           className="mx-4 inline-block text-indigo-600"
           style={{ display: "inline-block", perspective: 1000 }}
@@ -27,7 +24,6 @@ export default function NotFound() {
           0
         </motion.span>
 
-        {/* Last 4 */}
         <motion.span
           className="text-indigo-600"
           initial={{ rotateY: 90, opacity: 0 }}
@@ -38,7 +34,6 @@ export default function NotFound() {
         </motion.span>
       </div>
 
-      {/* Subheading */}
       <motion.h2
         className="mt-6 text-3xl font-bold text-gray-800 dark:text-gray-100"
         initial={{ y: 40, opacity: 0 }}
@@ -48,7 +43,6 @@ export default function NotFound() {
         Page Not Found
       </motion.h2>
 
-      {/* Paragraph */}
       <motion.p
         className="mt-2 text-lg text-gray-600 dark:text-gray-400 text-center px-6"
         initial={{ opacity: 0 }}
@@ -58,7 +52,6 @@ export default function NotFound() {
         Sorry, the page you’re looking for doesn’t exist.
       </motion.p>
 
-      {/* Button with 3D hover */}
       <motion.a
         href="/"
         className="mt-8 px-8 py-3 rounded-lg bg-indigo-600 text-white font-medium shadow-lg hover:shadow-xl transition-transform"

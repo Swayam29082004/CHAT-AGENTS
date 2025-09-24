@@ -41,7 +41,7 @@ function MyComponent() {
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl">
         <div className="p-6 flex justify-between items-center border-b">
-          <h2 className="text-2xl font-bold text-gray-800">Embed "{agent.name}"</h2>
+          <h2 className="text-2xl font-bold text-gray-800">Embed {agent.name}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <FontAwesomeIcon icon={faTimes} size="lg" />
           </button>
@@ -50,7 +50,9 @@ function MyComponent() {
         <div className="p-6 space-y-4">
           <div>
             <h3 className="font-semibold text-lg text-gray-700">1. Install SDK via NPM</h3>
-            <p className="text-gray-600 text-sm mb-2">After publishing, install the package in your project.</p>
+            <p className="text-gray-600 text-sm mb-2">
+              After publishing, install the package in your project.
+            </p>
             <pre className="bg-gray-100 p-3 rounded-md text-sm">
               <code>npm install @yourorg/chat-sdk</code>
             </pre>
@@ -61,7 +63,10 @@ function MyComponent() {
               <pre className="bg-gray-800 text-white p-4 rounded-md text-sm overflow-x-auto">
                 <code>{codeSnippet.trim()}</code>
               </pre>
-              <button onClick={handleCopy} className="absolute top-3 right-3 bg-gray-600 hover:bg-gray-500 text-white text-xs font-bold py-1 px-3 rounded-md">
+              <button
+                onClick={handleCopy}
+                className="absolute top-3 right-3 bg-gray-600 hover:bg-gray-500 text-white text-xs font-bold py-1 px-3 rounded-md"
+              >
                 <FontAwesomeIcon icon={copied ? faCheck : faCopy} className="mr-2" />
                 {copied ? "Copied!" : "Copy"}
               </button>

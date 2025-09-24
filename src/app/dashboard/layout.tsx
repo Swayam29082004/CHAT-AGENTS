@@ -4,21 +4,26 @@ import { useState } from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Navbar from "@/components/dashboard/Navbar";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
-    <div className="flex bg-gray-50"> {/* Optional: Add a light gray background to the root */}
+    <div className="flex bg-gray-50 min-h-screen">
+      {/* Sidebar */}
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
+      {/* Main Content Area */}
       <div
-        className={`flex-1 transition-all duration-300 ${
+        className={`flex-1 flex flex-col transition-all duration-300 ${
           isSidebarOpen ? "md:ml-64" : "md:ml-20"
         }`}
       >
         <Navbar />
-        {/* ✅ FIX: Changed p-6 to px-6 pb-6 to remove the top padding */}
-        <main className="px-6 pb-6">{children}</main>
+        <main className="flex-1 px-6 pb-6">{children}</main>
       </div>
     </div>
   );

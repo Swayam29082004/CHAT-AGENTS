@@ -8,7 +8,6 @@ import {
   faTachometerAlt,
   faPlay,
   faCloudUploadAlt,
-  faHistory,
   faCog,
   faBars,
   faTimes,
@@ -20,17 +19,14 @@ export default function Sidebar() {
   const [userName, setUserName] = useState("User");
   const pathname = usePathname();
 
-  // ✅ Load user from localStorage
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        try {
-          const parsed = JSON.parse(storedUser);
-          setUserName(parsed.username || "User");
-        } catch {
-          setUserName("User");
-        }
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const parsed: { username?: string } = JSON.parse(storedUser);
+        setUserName(parsed.username || "User");
+      } catch {
+        setUserName("User");
       }
     }
   }, []);
@@ -44,15 +40,13 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`flex flex-col justify-between h-screen bg-gray-800 text-white fixed top-0 left-0 transition-all duration-300 z-50
-      ${isOpen ? "w-64" : "w-20"}
-      `}
+      className={`flex flex-col justify-between h-screen bg-gray-800 text-white fixed top-0 left-0 transition-all duration-300 z-50 ${
+        isOpen ? "w-64" : "w-20"
+      }`}
     >
-      {/* Top Section */}
       <div>
-        {/* Toggle button */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          <span className="text-xl font-bold">{isOpen ? "Dashboard" : " "}</span>
+          <span className="text-xl font-bold">{isOpen ? "Dashboard" : ""}</span>
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="text-gray-300 focus:outline-none"
@@ -61,7 +55,6 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Links */}
         <nav className="mt-6 space-y-2">
           {links.map(({ href, label, icon }) => (
             <Link
@@ -80,7 +73,6 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* Bottom User Section */}
       <div className="p-4 border-t border-gray-700 flex items-center gap-3 group cursor-pointer relative">
         <FontAwesomeIcon
           icon={faUserCircle}

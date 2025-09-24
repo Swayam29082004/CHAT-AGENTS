@@ -1,46 +1,43 @@
-'use client';
+"use client";
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, ChangeEvent } from "react";
 
 export default function SettingsPage() {
   const [formData, setFormData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmNewPassword: '',
+    currentPassword: "",
+    newPassword: "",
+    confirmNewPassword: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
-    // Client-side validation
     if (formData.newPassword !== formData.confirmNewPassword) {
-      setError('New passwords do not match.');
+      setError("New passwords do not match.");
       return;
     }
     if (formData.newPassword.length < 6) {
-        setError('New password must be at least 6 characters long.');
-        return;
+      setError("New password must be at least 6 characters long.");
+      return;
     }
 
     setIsLoading(true);
 
     try {
-      // Get user ID from localStorage
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
       if (!user.id) {
-        setError('You must be logged in to change your password.');
-        setIsLoading(false);
+        setError("You must be logged in to change your password.");
         return;
       }
-      
-      const response = await fetch('/api/dashboard/settings/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+
+      const response = await fetch("/api/dashboard/settings/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.id,
           currentPassword: formData.currentPassword,
@@ -48,27 +45,24 @@ export default function SettingsPage() {
         }),
       });
 
-      const data = await response.json();
+      const data: { error?: string } = await response.json();
 
       if (response.ok) {
-        setSuccess('✅ Password updated successfully!');
-        // Clear the form fields
-        setFormData({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+        setSuccess("✅ Password updated successfully!");
+        setFormData({ currentPassword: "", newPassword: "", confirmNewPassword: "" });
       } else {
-        setError(data.error || 'Failed to update password.');
+        setError(data.error || "Failed to update password.");
       }
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('A network error occurred. Please try again.');
-      }
+      const msg =
+        err instanceof Error ? err.message : "A network error occurred. Please try again.";
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -82,9 +76,11 @@ export default function SettingsPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && <div className="alert-error">{error}</div>}
             {success && <div className="alert-success">{success}</div>}
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700">Current Password</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Current Password
+              </label>
               <input
                 type="password"
                 name="currentPassword"
@@ -96,7 +92,9 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">New Password</label>
+              <label className="block text-sm font-medium text-gray-700">
+                New Password
+              </label>
               <input
                 type="password"
                 name="newPassword"
@@ -108,7 +106,9 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Confirm New Password</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Confirm New Password
+              </label>
               <input
                 type="password"
                 name="confirmNewPassword"
@@ -118,10 +118,14 @@ export default function SettingsPage() {
                 required
               />
             </div>
-            
+
             <div className="pt-2">
-              <button type="submit" disabled={isLoading} className="btn-primary w-full sm:w-auto">
-                {isLoading ? 'Updating...' : 'Update Password'}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="btn-primary w-full sm:w-auto"
+              >
+                {isLoading ? "Updating..." : "Update Password"}
               </button>
             </div>
           </form>

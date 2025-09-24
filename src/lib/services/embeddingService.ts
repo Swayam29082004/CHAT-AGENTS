@@ -1,6 +1,5 @@
-import axios, { isAxiosError } from 'axios';
+import axios, { isAxiosError } from "axios";
 
-// Define the structure of the response from the OpenAI API for better type safety
 interface OpenAIEmbeddingItem {
   object: string;
   embedding: number[];
@@ -22,48 +21,33 @@ export class EmbeddingService {
   private model: string;
 
   constructor() {
-    this.apiKey = process.env.OPENAI_API_KEY!;
-    this.model = 'text-embedding-3-small'; // Powerful and cost-effective model
-
+    this.apiKey = process.env.OPENAI_API_KEY ?? "";
+    this.model = "text-embedding-3-small";
     if (!this.apiKey) {
-      throw new Error("OpenAI API key is not configured in environment variables.");
+      throw new Error("OpenAI API key is not configured.");
     }
   }
 
-  /**
-   * Generates vector embeddings for an array of texts.
-   * @param texts An array of strings to be converted into embeddings.
-   * @returns A promise that resolves to an array of vector embeddings.
-   */
   async generateEmbeddings(texts: string[]): Promise<number[][]> {
     try {
       const response = await axios.post<OpenAIEmbeddingResponse>(
-        'https://api.openai.com/v1/embeddings',
-        {
-          input: texts,
-          model: this.model,
-        },
+        "https://api.openai.com/v1/embeddings",
+        { input: texts, model: this.model },
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json",
           },
         }
       );
-
-      if (response.data && response.data.data) {
-        return response.data.data.map((item) => item.embedding);
+      return response.data?.data?.map((item) => item.embedding) ?? [];
+    } catch (err) {
+      if (isAxiosError(err)) {
+        console.error("OpenAI embeddings error:", err.response?.data || err.message);
       } else {
-        return [];
+        console.error("Unexpected embeddings error:", err);
       }
-    } catch (error) {
-      // Improve error handling by checking if the error is from Axios
-      if (isAxiosError(error)) {
-        console.error("Error generating OpenAI embeddings:", error.response?.data || error.message);
-      } else {
-        console.error("An unexpected error occurred:", error);
-      }
-      throw new Error("Failed to generate vector embeddings.");
+      throw new Error("Failed to generate embeddings.");
     }
   }
 }

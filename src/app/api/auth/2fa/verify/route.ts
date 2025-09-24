@@ -1,4 +1,4 @@
-// src/app/api/auth/2fa/verify/route.ts
+// /src/app/api/auth/2fa/verify/route.ts
 import { NextResponse } from "next/server";
 import speakeasy from "speakeasy";
 import connectDB from "@/lib/db/mongodb";
@@ -9,31 +9,23 @@ export async function POST(request: Request) {
   try {
     const { userId, token }: { userId: string; token: string } = await request.json();
     const user = await User.findById(userId);
-
     if (!user || !user.twoFactorSecret) {
       return NextResponse.json({ error: "2FA not set up" }, { status: 400 });
     }
-
     const verified = speakeasy.totp.verify({
       secret: user.twoFactorSecret,
       encoding: "base32",
       token,
-      window: 1, // allows 30s clock drift
+      window: 1
     });
-
     if (!verified) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
-
     user.twoFactorEnabled = true;
     await user.save();
-
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (err: unknown) {
-    console.error("2FA verify error:", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    const msg = err instanceof Error ? err.message : "Internal server error";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

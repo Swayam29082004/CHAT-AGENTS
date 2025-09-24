@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -24,11 +24,9 @@ export default function DeployPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // State for editing
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
-  // State for SDK actions
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [embeddingAgent, setEmbeddingAgent] = useState<Agent | null>(null);
 
@@ -43,8 +41,9 @@ export default function DeployPage() {
       try {
         const data = await fetchAgents(user.id);
         setAgents(data);
-      } catch (err: any) {
-        setError(err.message || "Unexpected error fetching agents.");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Unexpected error fetching agents.";
+        setError(msg);
       } finally {
         setIsLoading(false);
       }
@@ -53,18 +52,17 @@ export default function DeployPage() {
   }, []);
 
   const handleDelete = async (agentId: string) => {
-    // ✅ VALIDATION: Confirm before deleting
-    if (!window.confirm("Are you sure you want to delete this agent?")) {
-      return;
-    }
+    if (!window.confirm("Are you sure you want to delete this agent?")) return;
+
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     if (!user?.id) return;
+
     try {
       await deleteAgent(user.id, agentId);
-      // Remove the agent from the local state to update the UI
       setAgents((prev) => prev.filter((a) => a._id !== agentId));
-    } catch (err: any) {
-      alert(err.message || "❌ Failed to delete agent");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "❌ Failed to delete agent";
+      alert(msg);
     }
   };
 
@@ -81,14 +79,16 @@ export default function DeployPage() {
   const handleEditSave = async (agentId: string) => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     if (!user?.id) return;
+
     try {
       const updated = await editAgent(user.id, agentId, { name: editName });
       setAgents((prev) =>
         prev.map((a) => (a._id === agentId ? updated : a))
       );
       handleEditCancel();
-    } catch (err: any) {
-      alert(err.message || "❌ Failed to update agent");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "❌ Failed to update agent";
+      alert(msg);
     }
   };
 
@@ -96,9 +96,8 @@ export default function DeployPage() {
     setDownloadingId(agentId);
     try {
       const response = await fetch(`/api/sdk/download`);
-      if (!response.ok) {
-        throw new Error("Failed to download SDK source.");
-      }
+      if (!response.ok) throw new Error("Failed to download SDK source.");
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -108,9 +107,10 @@ export default function DeployPage() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error(error);
-      alert("Could not download the SDK source.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Could not download the SDK source.";
+      console.error(msg);
+      alert(msg);
     } finally {
       setDownloadingId(null);
     }
@@ -134,41 +134,69 @@ export default function DeployPage() {
                 key={agent._id}
                 className="bg-gray-50 border rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-4"
               >
-                {/* Agent Info */}
                 <div className="flex items-center gap-4">
-                  <img src={agent.avatar} alt="Agent Avatar" className="w-12 h-12 rounded-full object-cover"/>
+                  <img
+                    src={agent.avatar}
+                    alt="Agent Avatar"
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
                   {editingId === agent._id ? (
-                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="form-input text-sm"/>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="form-input text-sm"
+                    />
                   ) : (
                     <span className="font-semibold text-lg">{agent.name}</span>
                   )}
                 </div>
 
-                {/* Actions */}
                 <div className="flex items-center gap-3">
                   {editingId === agent._id ? (
                     <>
-                      <button onClick={() => handleEditSave(agent._id)} className="text-green-600 hover:text-green-800"><FontAwesomeIcon icon={faCheck} /></button>
-                      <button onClick={handleEditCancel} className="text-red-600 hover:text-red-800"><FontAwesomeIcon icon={faTimes} /></button>
+                      <button
+                        onClick={() => handleEditSave(agent._id)}
+                        className="text-green-600 hover:text-green-800"
+                      >
+                        <FontAwesomeIcon icon={faCheck} />
+                      </button>
+                      <button
+                        onClick={handleEditCancel}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <FontAwesomeIcon icon={faTimes} />
+                      </button>
                     </>
                   ) : (
-                    <button onClick={() => handleEditStart(agent)} className="text-gray-500 hover:text-blue-600"><FontAwesomeIcon icon={faEdit} /></button>
+                    <button
+                      onClick={() => handleEditStart(agent)}
+                      className="text-gray-500 hover:text-blue-600"
+                    >
+                      <FontAwesomeIcon icon={faEdit} />
+                    </button>
                   )}
-                  <button onClick={() => handleDelete(agent._id)} className="text-gray-500 hover:text-red-600"><FontAwesomeIcon icon={faTrash} /></button>
-                  
+
+                  <button
+                    onClick={() => handleDelete(agent._id)}
+                    className="text-gray-500 hover:text-red-600"
+                  >
+                    <FontAwesomeIcon icon={faTrash} />
+                  </button>
+
                   <div className="border-l h-6 mx-2"></div>
-                  
+
                   <button
                     onClick={() => setEmbeddingAgent(agent)}
                     className="btn-primary flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
                   >
-                     <FontAwesomeIcon icon={faCode} />
-                     Embed
+                    <FontAwesomeIcon icon={faCode} />
+                    Embed
                   </button>
 
                   <button
                     onClick={() => handleDownloadSource(agent._id)}
-                    disabled={downloadingId === agent._id} 
+                    disabled={downloadingId === agent._id}
                     className="btn-primary flex items-center gap-2"
                   >
                     {downloadingId === agent._id ? (
@@ -186,16 +214,18 @@ export default function DeployPage() {
           ) : (
             <div className="text-center py-10 bg-gray-50 rounded-lg">
               <p className="font-semibold">No agents found.</p>
-              <p className="text-gray-600 mt-1">Go to the Playground to create your first one!</p>
+              <p className="text-gray-600 mt-1">
+                Go to the Playground to create your first one!
+              </p>
             </div>
           )}
         </div>
       </div>
-      
+
       {embeddingAgent && (
-        <EmbedCodeModal 
-          agent={embeddingAgent} 
-          onClose={() => setEmbeddingAgent(null)} 
+        <EmbedCodeModal
+          agent={embeddingAgent}
+          onClose={() => setEmbeddingAgent(null)}
         />
       )}
     </>
