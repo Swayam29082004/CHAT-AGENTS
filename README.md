@@ -5,9 +5,17 @@ Embed your agent anywhere using the built-in **Chat Widget SDK**.
 
 ---
 
+
 ## 📺 Demo & Tutorial
 
 👉 [Watch on YouTube](https://youtu.be/3wFCslqKknA)  
+
+---
+
+## 🚀 Deployment
+
+🔗 Live on Contentstack Launch:  
+👉 [https://chat-agents.contentstackapps.com/](https://chat-agents.contentstackapps.com/)  
 
 ---
 
