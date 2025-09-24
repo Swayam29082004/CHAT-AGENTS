@@ -1,49 +1,12 @@
 // src/app/embed/[agentId]/page.tsx
-// @ts-nocheck
-// TS checks disabled for this file to avoid Next.js type inference issues during build
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-// ✅ Data fetcher for Contentstack
-async function getAgentData(agentId: string) {
-  const apiKey = process.env.CONTENTSTACK_API_KEY;
-  const deliveryToken = process.env.CONTENTSTACK_DELIVERY_TOKEN;
-  const environment = process.env.CONTENTSTACK_ENVIRONMENT || "development";
+import { getAgentData } from "@/lib/contentstack"; // ✅ import from lib
 
-  if (!apiKey || !deliveryToken) {
-    console.warn("⚠️ Missing Contentstack credentials");
-    return null;
-  }
-
-  try {
-    const res = await fetch(
-      `https://cdn.contentstack.io/v3/content_types/${agentId}/entries?environment=${environment}`,
-      {
-        headers: {
-          api_key: apiKey,
-          access_token: deliveryToken,
-        },
-        cache: "no-store", // avoid stale cache in Next.js
-      }
-    );
-
-    if (!res.ok) {
-      console.error(`❌ Failed to fetch agent ${agentId}`, await res.text());
-      return null;
-    }
-
-    const data = await res.json();
-    return data.entries?.[0] ?? null;
-  } catch (error) {
-    console.error("❌ Error fetching agent data:", error);
-    return null;
-  }
-}
-
-// ✅ Minimal fallback page
-// Guaranteed to be a valid Next.js module (avoids build errors)
-export default function AgentPage(props: any) {
+export default async function AgentPage(props: any) {
   const agentId = props?.params?.agentId ?? "unknown";
 
-  // ⚡ NOTE: You *can* enable this later when you want real data
+  // You can use getAgentData here if you want:
   // const agent = await getAgentData(agentId);
 
   return (
