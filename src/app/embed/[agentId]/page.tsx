@@ -1,6 +1,6 @@
-import React from "react";
+// src/app/embed/[agentId]/page.tsx
 
-interface AgentPageProps {
+interface PageProps {
   params: {
     agentId: string;
   };
@@ -24,7 +24,7 @@ async function getAgentData(agentId: string) {
           api_key: apiKey,
           access_token: deliveryToken,
         },
-        cache: "no-store", 
+        cache: "no-store", // prevents stale data in Next.js
       }
     );
 
@@ -41,8 +41,8 @@ async function getAgentData(agentId: string) {
   }
 }
 
-
-export default async function AgentPage({ params }: AgentPageProps) {
+// ✅ Async server component page
+export default async function AgentPage({ params }: PageProps) {
   const { agentId } = params;
   const agent = await getAgentData(agentId);
 
@@ -68,7 +68,7 @@ export default async function AgentPage({ params }: AgentPageProps) {
   );
 }
 
-
+// ✅ Pre-generate static params for known agents
 export async function generateStaticParams() {
   return [
     { agentId: "travel_assistant" },
