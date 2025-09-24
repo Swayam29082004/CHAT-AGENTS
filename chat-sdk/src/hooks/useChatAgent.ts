@@ -12,7 +12,20 @@ interface UseChatAgentProps {
   initialMessages?: Message[];
 }
 
-export const useChatAgent = ({ apiUrl, agentId, apiKey, initialMessages }: UseChatAgentProps) => {
+interface ApiSuccessResponse {
+  answer: string;
+}
+
+interface ApiErrorResponse {
+  error: string;
+}
+
+export const useChatAgent = ({
+  apiUrl,
+  agentId,
+  apiKey,
+  initialMessages,
+}: UseChatAgentProps) => {
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -47,18 +60,21 @@ export const useChatAgent = ({ apiUrl, agentId, apiKey, initialMessages }: UseCh
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
+          const errorData: ApiErrorResponse = await response
+            .json()
+            .catch(() => ({ error: "" }));
           throw new Error(errorData.error || "An API error occurred.");
         }
 
-        const data = await response.json();
+        const data: ApiSuccessResponse = await response.json();
         const assistantMessage: Message = {
           role: "assistant",
           content: data.answer || "Sorry, I could not get a response.",
         };
         setMessages((prev) => [...prev, assistantMessage]);
-      } catch (err: any) {
-        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error ? err.message : "An unknown error occurred.";
         setError(errorMessage);
         setMessages((prev) => [
           ...prev,
@@ -71,5 +87,13 @@ export const useChatAgent = ({ apiUrl, agentId, apiKey, initialMessages }: UseCh
     [apiUrl, agentId, apiKey, input, isLoading]
   );
 
-  return { messages, input, isLoading, error, setInput, sendMessage, setMessages };
+  return {
+    messages,
+    input,
+    isLoading,
+    error,
+    setInput,
+    sendMessage,
+    setMessages,
+  };
 };
