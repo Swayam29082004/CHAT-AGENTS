@@ -1,14 +1,13 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { useChatAgent } from "../hooks/useChatAgent";
-import "./ChatWidget.css"; // Import the CSS
+import { useChatAgent, type Message } from "../hooks/useChatAgent";
+import "./ChatWidget.css";
 
-interface ChatWidgetProps {
+export interface ChatWidgetProps {
   apiUrl: string;
   agentId: string;
-  apiKey?: string;
-  agentName?: string; // 
+  agentName?: string;          // ✅ added here
   welcomeMessage?: string;
   placeholderText?: string;
   themeColor?: string;
@@ -17,7 +16,6 @@ interface ChatWidgetProps {
 export const ChatWidget: React.FC<ChatWidgetProps> = ({
   apiUrl,
   agentId,
-  apiKey,
   agentName,
   welcomeMessage = "Hello! How can I help you today?",
   placeholderText = "Type your message...",
@@ -27,7 +25,6 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     useChatAgent({
       apiUrl,
       agentId,
-      apiKey,
       initialMessages: [{ role: "assistant", content: welcomeMessage }],
     });
 
@@ -38,7 +35,6 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // Reset chat when widget is closed
   useEffect(() => {
     if (!isOpen) {
       setMessages([{ role: "assistant", content: welcomeMessage }]);
@@ -48,7 +44,6 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
   return (
     <>
-      {/* Floating Toggle Button */}
       {!isOpen && (
         <button
           className="chat-toggle-button"
@@ -66,7 +61,6 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
         >
           <header className="chat-header">
             <div className="status-indicator"></div>
-            {/* ✅ Show agentName if available, else default */}
             <h2>{agentName || "Agent"}</h2>
             <button className="close-button" onClick={() => setIsOpen(false)}>
               ✕
@@ -75,13 +69,11 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
           <main className="chat-body">
             <div className="message-list">
-              {messages.map((msg, index) => (
+              {messages.map((msg: Message, index: number) => (
                 <div key={index} className={`message-wrapper ${msg.role}`}>
                   <div className={`message-bubble ${msg.role}`}>
                     <strong className="message-sender">
-                      {msg.role === "assistant"
-                        ? agentName || "Agent"
-                        : "User"}
+                      {msg.role === "assistant" ? agentName || "Agent" : "User"}
                     </strong>
                     <p
                       dangerouslySetInnerHTML={{
@@ -96,14 +88,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                 <div className="message-wrapper assistant">
                   <div className="message-bubble assistant loading-bubble">
                     <div className="loading-dot"></div>
-                    <div
-                      className="loading-dot"
-                      style={{ animationDelay: "0.1s" }}
-                    ></div>
-                    <div
-                      className="loading-dot"
-                      style={{ animationDelay: "0.2s" }}
-                    ></div>
+                    <div className="loading-dot" style={{ animationDelay: "0.1s" }}></div>
+                    <div className="loading-dot" style={{ animationDelay: "0.2s" }}></div>
                   </div>
                 </div>
               )}
@@ -126,11 +112,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                 disabled={isLoading || !input.trim()}
                 className="send-button"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
                 </svg>
               </button>

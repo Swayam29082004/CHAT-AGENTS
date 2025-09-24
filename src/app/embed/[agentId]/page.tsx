@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChatWidget } from "../../../../chat-sdk/src/components/ChatWidget";
 import "../../../../chat-sdk/src/components/ChatWidget.css";
@@ -17,9 +17,9 @@ interface Agent {
 export default function EmbedAgentPage({
   params,
 }: {
-  params: Promise<{ agentId: string }>;
+  params: { agentId: string };
 }) {
-  const { agentId } = use(params);
+  const { agentId } = params;
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
@@ -30,17 +30,12 @@ export default function EmbedAgentPage({
   useEffect(() => {
     const fetchAgent = async () => {
       try {
-        const response = await fetch(
-          `/api/dashboard/playground/${agentId}/agents`
-        );
+        const response = await fetch(`/api/dashboard/playground/${agentId}/agents`);
         if (!response.ok) throw new Error("Failed to load agent data");
         const data = await response.json();
         setAgent(data?.agent ?? null);
       } catch (err: unknown) {
-        const msg =
-          err instanceof Error
-            ? err.message
-            : "Unexpected error loading agent.";
+        const msg = err instanceof Error ? err.message : "Unexpected error loading agent.";
         setError(msg);
       } finally {
         setIsLoading(false);
@@ -58,7 +53,7 @@ export default function EmbedAgentPage({
         <ChatWidget
           apiUrl="http://localhost:3000/api/rag-query"
           agentId={agentId}
-          agentName={agent?.name} // ✅ Now supported in ChatWidget
+          agentName={agent?.name}             
           welcomeMessage={agent?.welcomeMessage}
           placeholderText={agent?.placeholderText}
           themeColor={agent?.color}
