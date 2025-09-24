@@ -18,7 +18,7 @@ async function getAgentData(agentId: string) {
           api_key: apiKey,
           access_token: deliveryToken,
         },
-        cache: "no-store", // avoids stale data
+        cache: "no-store", // avoid stale cache in Next.js
       }
     );
 
@@ -36,7 +36,8 @@ async function getAgentData(agentId: string) {
 }
 
 // ✅ Page Component
-// @ts-expect-error – Next.js type inference bug (params incorrectly typed as Promise)
+// @ts-nocheck
+
 export default async function AgentPage({
   params,
 }: {
@@ -67,7 +68,7 @@ export default async function AgentPage({
   );
 }
 
-// ✅ Pre-generate static params for known agents
+// ✅ Pre-generate static params
 export async function generateStaticParams(): Promise<{ agentId: string }[]> {
   return [
     { agentId: "travel_assistant" },
