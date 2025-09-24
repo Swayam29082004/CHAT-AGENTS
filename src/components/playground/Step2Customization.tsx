@@ -9,6 +9,8 @@ type Props = {
   setAgentName: (val: string) => void;
   avatar: string;
   setAvatar: (val: string) => void;
+  // ✅ ADD THIS PROP to store the Contentstack asset UID
+  setAvatarAssetUid: (val: string | null) => void;
   color: string;
   setColor: (val: string) => void;
   welcomeMessage: string;
@@ -22,6 +24,7 @@ export default function Step2Customization({
   setAgentName,
   avatar,
   setAvatar,
+  setAvatarAssetUid, // ✅ Get the new setter
   color,
   setColor,
   welcomeMessage,
@@ -31,20 +34,23 @@ export default function Step2Customization({
 }: Props) {
   const handleAvatarUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) return;
+    setAvatarAssetUid(null); // Reset on new upload
 
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = reader.result as string;
-      const res = await fetch("/api/upload", {
+      // ✅ FIX: Call our new Contentstack asset upload endpoint
+      const res = await fetch("/api/assets/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ file: base64 }),
       });
       const data = await res.json();
       if (data.success) {
-        setAvatar(data.url);
+        setAvatar(data.url); // Set the URL for preview
+        setAvatarAssetUid(data.uid); // Set the UID for saving
       } else {
-        alert("Upload failed ❌");
+        alert(`Upload failed: ${data.error}`);
       }
     };
     reader.readAsDataURL(file);

@@ -7,20 +7,30 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB();
 
-    const { email, password } = await request.json();
+    const { email, password }: { email: string; password: string } = await request.json();
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
     const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
 
     const isMatch = await bcrypt.compare(password, user.hashedPassword);
-    if (!isMatch) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    if (!isMatch) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
 
-    return NextResponse.json({ success: true, user: { id: user._id, username: user.username, email: user.email } }, { status: 200 });
-  } catch (error) {
-    console.error("Login error:", error);
+    return NextResponse.json(
+      {
+        success: true,
+        user: { id: user._id.toString(), username: user.username, email: user.email },
+      },
+      { status: 200 }
+    );
+  } catch (err: unknown) {
+    console.error("Login error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -7,9 +7,7 @@ export class PineconeService {
       console.log("No vectors to upsert.");
       return;
     }
-
     try {
-      // Upsert in batches for better performance with large documents
       for (let i = 0; i < vectors.length; i += 100) {
         const batch = vectors.slice(i, i + 100);
         await pineconeIndex.upsert(batch);
@@ -22,25 +20,26 @@ export class PineconeService {
   }
 
   /**
-   * Queries the index to find vectors similar to the query vector,
-   * filtered by a specific user ID.
+   * ✅ Queries the index to find vectors filtered by a specific agent ID.
    */
-  async query(queryEmbedding: number[], topK: number, userId: string): Promise<ScoredPineconeRecord<RecordMetadata>[]> {
+  async queryByAgentId(
+    queryEmbedding: number[],
+    topK: number,
+    agentId: string
+  ): Promise<ScoredPineconeRecord<RecordMetadata>[]> {
     try {
       const queryResult = await pineconeIndex.query({
         vector: queryEmbedding,
         topK,
-        // ✅ CRITICAL: Filter results to only include vectors for the specific user
         filter: {
-          userId: { '$eq': userId }
+          agentId: { '$eq': agentId },
         },
-        includeMetadata: true, // Ensure metadata is returned
+        includeMetadata: true,
       });
-      
-      return queryResult.matches || [];
 
+      return queryResult.matches || [];
     } catch (error) {
-      console.error("Error querying Pinecone:", error);
+      console.error("Error querying Pinecone by agentId:", error);
       throw new Error("Failed to query vectors from Pinecone.");
     }
   }

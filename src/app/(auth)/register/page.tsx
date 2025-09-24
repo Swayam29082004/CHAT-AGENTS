@@ -39,15 +39,20 @@ export default function RegisterPage() {
         }),
       });
 
-      const data = await response.json();
+      const data: { success?: boolean; error?: string } = await response.json();
+
       if (response.ok && data.success) {
         setSuccess('✅ Account created successfully! Redirecting...');
         setTimeout(() => router.push('/login'), 2000);
       } else {
         setError(data.error || 'Registration failed');
       }
-    } catch {
-      setError('Network error. Please try again.');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Network error. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

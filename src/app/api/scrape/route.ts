@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import axios from 'axios';
+import axios from "axios";
+import { chromium } from "playwright";
 import connectDB from "@/lib/db/mongodb";
 import { DataProcessor } from "@/lib/services/dataProcessor";
 import { EmbeddingService } from "@/lib/services/embeddingService";
@@ -9,81 +10,72 @@ import mongoose from "mongoose";
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
-    const { url, userId } = await req.json();
+    const { url, userId, agentId }: { url: string; userId: string; agentId: string } = await req.json();
 
-    if (!url || !userId) {
-      return NextResponse.json({ error: "URL and userId are required" }, { status: 400 });
+    if (!url || !userId || !agentId) {
+      return NextResponse.json({ error: "URL, userId, and agentId are required" }, { status: 400 });
     }
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return NextResponse.json({ error: "Invalid userId format" }, { status: 400 });
-    }
-    
-    // --- 1. SCRAPE ---
-    const accountId = process.env.BRIGHT_DATA_ACCOUNT_ID;
-    const zoneName = process.env.BRIGHT_DATA_ZONE_NAME;
-    const apiToken = process.env.BRIGHT_DATA_API_TOKEN;
-
-    if (!accountId || !zoneName || !apiToken) {
-        return NextResponse.json({ error: "Scraping service is not configured." }, { status: 500 });
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(agentId)) {
+      return NextResponse.json({ error: "Invalid ID format" }, { status: 400 });
     }
 
-    const username = `brd-customer-${accountId}-zone-${zoneName}`;
-    const password = apiToken;
-    const host = 'brd.superproxy.io';
-    const port = 22225;
+    let htmlContent: string | null = null;
 
-    const response = await axios.get(url, {
-      proxy: { host, port, auth: { username, password }, protocol: 'http' },
-    });
+    // 1. Try BrightData proxy (static/SSR path)
+    try {
+      const { BRIGHT_DATA_ACCOUNT_ID, BRIGHT_DATA_ZONE_NAME, BRIGHT_DATA_API_TOKEN } = process.env;
+      if (BRIGHT_DATA_ACCOUNT_ID && BRIGHT_DATA_ZONE_NAME && BRIGHT_DATA_API_TOKEN) {
+        const username = `brd-customer-${BRIGHT_DATA_ACCOUNT_ID}-zone-${BRIGHT_DATA_ZONE_NAME}`;
+        const response = await axios.get(url, {
+          proxy: { host: "brd.superproxy.io", port: 22225, auth: { username, password: BRIGHT_DATA_API_TOKEN }, protocol: "http" },
+          timeout: 15000
+        });
+        htmlContent = response.data;
+      }
+    } catch {
+      console.warn(`[Scrape API] BrightData failed, falling back to Playwright`);
+    }
 
-    // --- 2. CHUNK ---
+    // 2. Fallback to Playwright if needed (CSR path)
+    if (!htmlContent || htmlContent.length < 1000) {
+      const browser = await chromium.launch({ headless: true });
+      const page = await browser.newPage();
+      await page.goto(url, { waitUntil: "networkidle" });
+      htmlContent = await page.content();
+      await browser.close();
+    }
+
+    // 3. Process chunks
     const processor = new DataProcessor();
-    const chunks = processor.process(response.data, url);
-    
+    const chunks = processor.process(htmlContent, url);
     if (chunks.length === 0) {
-        return NextResponse.json({ success: true, message: "No content was found to process on the page." });
+      return NextResponse.json({ success: true, message: "No content to process." });
     }
 
-    // --- 3. EMBED ---
+    // 4. Generate embeddings
     const embeddingService = new EmbeddingService();
-    const chunkTexts = chunks.map(chunk => chunk.text);
-    const embeddings = await embeddingService.generateEmbeddings(chunkTexts);
+    const embeddings = await embeddingService.generateEmbeddings(chunks.map((c) => c.text));
 
-    // --- 4. PREPARE & STORE VECTORS IN PINECONE ---
+    // 5. Store in Pinecone
     const pineconeService = new PineconeService();
-    const vectorsToUpsert = chunks.map((chunk, index) => ({
+    const vectors = chunks.map((chunk, i) => ({
       id: chunk.id,
-      values: embeddings[index],
+      values: embeddings[i],
       metadata: {
-        // ✅ CRITICAL: Store userId in metadata for filtering later
-        userId: userId, 
+        userId,
+        agentId,
         sourceUrl: chunk.metadata.source,
-        textSnippet: chunk.text.substring(0, 500), // A preview of the text
-      },
+        textSnippet: chunk.text.substring(0, 500)
+      }
     }));
+    await pineconeService.upsert(vectors);
 
-    await pineconeService.upsert(vectorsToUpsert);
-
-    console.log(`[Scrape API] Stored ${chunks.length} vector embeddings in Pinecone for userId: ${userId}.`);
-    
-    return NextResponse.json({ 
-        success: true, 
-        message: `Successfully processed and stored ${chunks.length} document chunks.`,
-        summary: chunks[0].text.slice(0, 500) + '...',
+    return NextResponse.json({
+      success: true,
+      message: `Scraped and stored ${chunks.length} chunks.`
     });
-
   } catch (err: unknown) {
-    console.error("[Scrape API] Full error object:", err);
-     if (axios.isAxiosError(err)) {
-        console.error("[Scrape API] Axios error response:", err.response?.data);
-        return NextResponse.json(
-          { error: "Failed to scrape the website.", details: err.response?.data?.message || err.message },
-          { status: err.response?.status || 500 }
-        );
-    }
-    return NextResponse.json(
-      { error: "An error occurred during the scrape and embed process." },
-      { status: 500 }
-    );
+    const msg = err instanceof Error ? err.message : "Failed to scrape website.";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

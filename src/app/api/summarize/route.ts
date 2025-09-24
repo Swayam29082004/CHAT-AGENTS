@@ -1,84 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
-import axios, { isAxiosError } from 'axios';
+import axios, { isAxiosError } from "axios";
 import { DataProcessor } from "@/lib/services/dataProcessor";
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req: NextRequest) {
   try {
-    const { url } = await req.json();
-
+    const { url }: { url: string } = await req.json();
     if (!url) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
-    
-    // --- 1. SCRAPE WEBSITE CONTENT ---
-    const accountId = process.env.BRIGHT_DATA_ACCOUNT_ID;
-    const zoneName = process.env.BRIGHT_DATA_ZONE_NAME;
-    const apiToken = process.env.BRIGHT_DATA_API_TOKEN;
 
-    if (!accountId || !zoneName || !apiToken) {
-        return NextResponse.json({ error: "Scraping service is not configured." }, { status: 500 });
+    // 1. Scrape website content with BrightData
+    const { BRIGHT_DATA_ACCOUNT_ID, BRIGHT_DATA_ZONE_NAME, BRIGHT_DATA_API_TOKEN } = process.env;
+    if (!BRIGHT_DATA_ACCOUNT_ID || !BRIGHT_DATA_ZONE_NAME || !BRIGHT_DATA_API_TOKEN) {
+      return NextResponse.json({ error: "Scraping service is not configured." }, { status: 500 });
     }
-
-    const username = `brd-customer-${accountId}-zone-${zoneName}`;
-    const password = apiToken;
-    const host = 'brd.superproxy.io';
-    const port = 22225;
-
+    const username = `brd-customer-${BRIGHT_DATA_ACCOUNT_ID}-zone-${BRIGHT_DATA_ZONE_NAME}`;
     const scrapeResponse = await axios.get(url, {
-      proxy: { host, port, auth: { username, password }, protocol: 'http' },
+      proxy: { host: "brd.superproxy.io", port: 22225, auth: { username, password: BRIGHT_DATA_API_TOKEN }, protocol: "http" }
     });
     const htmlContent = scrapeResponse.data;
 
-    // --- 2. PROCESS AND EXTRACT TEXT ---
+    // 2. Process & extract readable text
     const processor = new DataProcessor();
-    const cleanText = processor.process(htmlContent, url)
-                               .map(chunk => chunk.text)
-                               .join(" ");
-    
+    const cleanText = processor
+      .process(htmlContent, url)
+      .map((chunk) => chunk.text)
+      .join(" ");
+
     if (!cleanText || cleanText.trim().length === 0) {
-        return NextResponse.json({ error: "Could not extract any readable text from the URL." }, { status: 400 });
+      return NextResponse.json({ error: "No readable text extracted from URL." }, { status: 400 });
     }
 
-    // --- 3. SUMMARIZE WITH OPENAI ---
+    // 3. Summarize with OpenAI
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
-        {
-          role: "system",
-          content: "You are an expert assistant that provides clear and concise summaries of web page content.",
-        },
-        {
-          role: "user",
-          content: `Please summarize the following text from the website ${url}:\n\n"${cleanText.substring(0, 4000)}"`,
-        },
+        { role: "system", content: "You are an expert assistant that provides clear and concise summaries of web page content." },
+        { role: "user", content: `Summarize this page (${url}):\n\n"${cleanText.substring(0, 4000)}"` }
       ],
       temperature: 0.3,
-      max_tokens: 250,
+      max_tokens: 250
     });
 
-    const summary = completion.choices[0]?.message?.content;
-
-    return NextResponse.json({ 
-        success: true, 
-        summary: summary,
-    });
-
+    const summary = completion.choices[0]?.message?.content?.trim();
+    return NextResponse.json({ success: true, summary });
   } catch (err: unknown) {
-    console.error("[Summarize API] Error:", err);
     if (isAxiosError(err)) {
-        return NextResponse.json(
-          { error: "Failed to scrape the website for summarization.", details: err.message },
-          { status: err.response?.status || 500 }
-        );
+      return NextResponse.json(
+        { error: "Failed to scrape website.", details: err.message },
+        { status: err.response?.status || 500 }
+      );
     }
-    return NextResponse.json(
-      { error: "An unexpected error occurred while generating the summary." },
-      { status: 500 }
-    );
+    const msg = err instanceof Error ? err.message : "Unexpected error generating summary.";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
