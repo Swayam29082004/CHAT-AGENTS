@@ -1,6 +1,7 @@
 "use client";
 
 import { HexColorPicker } from "react-colorful";
+import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUpload } from "@fortawesome/free-solid-svg-icons";
 
@@ -9,7 +10,6 @@ type Props = {
   setAgentName: (val: string) => void;
   avatar: string;
   setAvatar: (val: string) => void;
-  // ✅ ADD THIS PROP to store the Contentstack asset UID
   setAvatarAssetUid: (val: string | null) => void;
   color: string;
   setColor: (val: string) => void;
@@ -24,7 +24,7 @@ export default function Step2Customization({
   setAgentName,
   avatar,
   setAvatar,
-  setAvatarAssetUid, // ✅ Get the new setter
+  setAvatarAssetUid,
   color,
   setColor,
   welcomeMessage,
@@ -34,12 +34,11 @@ export default function Step2Customization({
 }: Props) {
   const handleAvatarUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) return;
-    setAvatarAssetUid(null); // Reset on new upload
+    setAvatarAssetUid(null);
 
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = reader.result as string;
-      // ✅ FIX: Call our new Contentstack asset upload endpoint
       const res = await fetch("/api/assets/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -47,8 +46,8 @@ export default function Step2Customization({
       });
       const data = await res.json();
       if (data.success) {
-        setAvatar(data.url); // Set the URL for preview
-        setAvatarAssetUid(data.uid); // Set the UID for saving
+        setAvatar(data.url);
+        setAvatarAssetUid(data.uid);
       } else {
         alert(`Upload failed: ${data.error}`);
       }
@@ -79,7 +78,10 @@ export default function Step2Customization({
         <div className="flex-1 flex flex-col items-center">
           <label className="block text-sm font-medium mb-2">Agent Avatar</label>
           <div
-            onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files[0]) handleAvatarUpload(e.dataTransfer.files[0]); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (e.dataTransfer.files[0]) handleAvatarUpload(e.dataTransfer.files[0]);
+            }}
             onDragOver={(e) => e.preventDefault()}
             onClick={() => document.getElementById("avatarInput")?.click()}
             className="w-32 h-32 border-2 border-dashed rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-50 transition text-gray-400 hover:text-gray-600"
@@ -90,20 +92,34 @@ export default function Step2Customization({
                 <p className="text-xs mt-1">Click to Upload</p>
               </div>
             ) : (
-              <img src={avatar} alt="Avatar preview" className="w-28 h-28 rounded-full object-cover border shadow-sm" />
+              <Image
+                src={avatar}
+                alt="Avatar preview"
+                width={112}
+                height={112}
+                className="w-28 h-28 rounded-full object-cover border shadow-sm"
+              />
             )}
-            <input id="avatarInput" type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleAvatarUpload(e.target.files[0]); }} />
+            <input
+              id="avatarInput"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.[0]) handleAvatarUpload(e.target.files[0]);
+              }}
+            />
           </div>
-          {/* ✅ YOUR REQUESTED TEXT ADDED HERE */}
-          <p className="text-xs text-gray-500 mt-2">
-            Drag and drop the image.
-          </p>
+          <p className="text-xs text-gray-500 mt-2">Drag and drop the image.</p>
         </div>
-        
+
         <div className="flex-1 flex flex-col items-center">
           <label className="block text-sm font-medium mb-2">Agent Theme Color</label>
           <HexColorPicker color={color} onChange={setColor} />
-          <p className="text-sm mt-2 p-1 rounded font-medium" style={{ backgroundColor: color, color: '#fff' }}>
+          <p
+            className="text-sm mt-2 p-1 rounded font-medium"
+            style={{ backgroundColor: color, color: "#fff" }}
+          >
             Selected: {color}
           </p>
         </div>
@@ -122,7 +138,7 @@ export default function Step2Customization({
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">Input Placeholder Text</label>
-           <textarea
+          <textarea
             placeholder="Ask a question..."
             value={placeholderText}
             onChange={(e) => setPlaceholderText(e.target.value)}

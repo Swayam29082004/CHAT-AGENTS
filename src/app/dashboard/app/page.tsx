@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 export default function AppPage() {
@@ -97,10 +98,12 @@ export default function AppPage() {
             className="p-6 bg-white rounded-xl shadow hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
           >
             <div className="flex flex-col items-center">
-              <img
-                src={card.image}
-                alt={card.title}
-                className="w-24 h-24 mb-4 object-contain"
+              <Image
+                src={card.image} // ✅ use dynamic image
+                alt={card.title} // ✅ descriptive alt
+                width={200}      // ✅ required by next/image
+                height={200}
+                className="mb-4 object-contain"
               />
               <h2 className="text-xl font-semibold mb-2 text-center">
                 {card.title}

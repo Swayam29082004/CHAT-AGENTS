@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faEdit,
@@ -135,9 +136,11 @@ export default function DeployPage() {
                 className="bg-gray-50 border rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-4"
               >
                 <div className="flex items-center gap-4">
-                  <img
+                  <Image
                     src={agent.avatar}
                     alt="Agent Avatar"
+                    width={48}
+                    height={48}
                     className="w-12 h-12 rounded-full object-cover"
                   />
                   {editingId === agent._id ? (

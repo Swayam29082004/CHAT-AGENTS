@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState, Dispatch, SetStateAction } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -14,10 +14,14 @@ import {
   faUserCircle,
 } from "@fortawesome/free-solid-svg-icons";
 
-export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(true);
-  const [userName, setUserName] = useState("User");
+interface SidebarProps {
+  isOpen: boolean;
+  setIsOpen: Dispatch<SetStateAction<boolean>>;
+}
+
+export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const pathname = usePathname();
+  const [userName, setUserName] = useState("User");
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -44,6 +48,7 @@ export default function Sidebar() {
         isOpen ? "w-64" : "w-20"
       }`}
     >
+      {/* Header + toggle */}
       <div>
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <span className="text-xl font-bold">{isOpen ? "Dashboard" : ""}</span>
@@ -55,6 +60,7 @@ export default function Sidebar() {
           </button>
         </div>
 
+        {/* Navigation */}
         <nav className="mt-6 space-y-2">
           {links.map(({ href, label, icon }) => (
             <Link
@@ -73,6 +79,7 @@ export default function Sidebar() {
         </nav>
       </div>
 
+      {/* User section */}
       <div className="p-4 border-t border-gray-700 flex items-center gap-3 group cursor-pointer relative">
         <FontAwesomeIcon
           icon={faUserCircle}
