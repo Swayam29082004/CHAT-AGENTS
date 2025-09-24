@@ -1,6 +1,4 @@
-
 import React from "react";
-
 
 interface AgentPageProps {
   params: {
@@ -26,24 +24,24 @@ async function getAgentData(agentId: string) {
           api_key: apiKey,
           access_token: deliveryToken,
         },
-        cache: "no-store", // prevents stale data in Next.js
+        cache: "no-store", 
       }
     );
 
     if (!res.ok) {
-      console.error(`❌ Failed to fetch agent ${agentId}`, await res.text());
+      console.error(` Failed to fetch agent ${agentId}`, await res.text());
       return null;
     }
 
     const data = await res.json();
     return data.entries?.[0] ?? null;
   } catch (error) {
-    console.error("❌ Error fetching agent data:", error);
+    console.error(" Error fetching agent data:", error);
     return null;
   }
 }
 
-// ✅ Page Component
+
 export default async function AgentPage({ params }: AgentPageProps) {
   const { agentId } = params;
   const agent = await getAgentData(agentId);
@@ -70,7 +68,7 @@ export default async function AgentPage({ params }: AgentPageProps) {
   );
 }
 
-// ✅ Pre-generate some known agent routes at build time
+
 export async function generateStaticParams() {
   return [
     { agentId: "travel_assistant" },

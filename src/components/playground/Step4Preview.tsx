@@ -1,4 +1,4 @@
-"use client";
+// "use client";
 
 import React, { useState, useRef, useEffect, FormEvent } from "react";
 import Image from "next/image";
@@ -11,11 +11,6 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { motion, AnimatePresence } from "framer-motion";
-
-interface ChatUser {
-  username: string;
-  id?: string;
-}
 
 interface Message {
   role: "user" | "assistant";
@@ -34,13 +29,11 @@ type Props = {
 
 function ChatMessage({
   message,
-  user,
   agentName,
   agentAvatar,
   userColor,
 }: {
   message: Message;
-  user: ChatUser | null;
   agentName: string;
   agentAvatar: string;
   userColor: string;
@@ -50,9 +43,11 @@ function ChatMessage({
 
   const UserAvatar = () => (
     <div className="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-white font-bold">
-      {displayName
-        ? displayName.charAt(0).toUpperCase()
-        : <FontAwesomeIcon icon={faUser} />}
+      {displayName ? (
+        displayName.charAt(0).toUpperCase()
+      ) : (
+        <FontAwesomeIcon icon={faUser} />
+      )}
     </div>
   );
 
@@ -98,7 +93,6 @@ export default function Step4Preview({
   placeholderText,
   agentId,
 }: Props) {
-  const [user, setUser] = useState<ChatUser | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -117,11 +111,6 @@ export default function Step4Preview({
   }, [agentId]);
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) setUser(JSON.parse(userData));
-  }, []);
-
-  useEffect(() => {
     chatContainerRef.current?.scrollTo({
       top: chatContainerRef.current.scrollHeight,
       behavior: "smooth",
@@ -133,8 +122,7 @@ export default function Step4Preview({
       setMessages([
         {
           role: "assistant",
-          content:
-            welcomeMessage || "Hello! How can I help you today?",
+          content: welcomeMessage || "Hello! How can I help you today?",
         },
       ]);
       setInput("");
@@ -153,14 +141,6 @@ export default function Step4Preview({
     setIsLoading(true);
 
     try {
-      const userData = localStorage.getItem("user");
-      if (!userData) throw new Error("You must be logged in to chat.");
-      const parsedUser = JSON.parse(userData);
-
-      console.log(
-        `[Step4Preview - Before API] query="${msgContent}", agentId=${agentId}, userId=${parsedUser.id}`
-      );
-
       if (!agentId) {
         const missingMsg: Message = {
           role: "assistant",
@@ -177,7 +157,6 @@ export default function Step4Preview({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: msgContent,
-          userId: parsedUser.id,
           agentId,
         }),
       });
@@ -197,9 +176,7 @@ export default function Step4Preview({
       console.log("[Step4Preview - API] Success response", data);
       const assistantMessage: Message = {
         role: "assistant",
-        content:
-          data.answer ||
-          "Sorry, the agent returned an empty response.",
+        content: data.answer || "Sorry, the agent returned an empty response.",
         sources: data.sources,
       };
       setMessages((prev) => [...prev, assistantMessage]);
@@ -256,7 +233,6 @@ export default function Step4Preview({
                 <ChatMessage
                   key={index}
                   message={msg}
-                  user={user}
                   agentName={agentName}
                   agentAvatar={avatar}
                   userColor={color}

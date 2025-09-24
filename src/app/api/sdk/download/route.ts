@@ -1,5 +1,5 @@
 // /src/app/api/sdk/download/route.ts
-import { NextRequest, NextResponse } from "next/server";
+import {  NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 import JSZip from "jszip";
@@ -20,7 +20,7 @@ async function addFilesToZip(zip: JSZip, dir: string, base: string) {
   }
 }
 
-export async function GET(_: NextRequest) {
+export async function GET() {
   try {
     const zip = new JSZip();
     const sdkRoot = path.join(process.cwd(), "chat-sdk");
