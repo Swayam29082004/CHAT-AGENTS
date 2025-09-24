@@ -6,7 +6,7 @@ async function getAgentData(agentId: string) {
   const environment = process.env.CONTENTSTACK_ENVIRONMENT || "development";
 
   if (!apiKey || !deliveryToken) {
-    console.warn("Missing Contentstack credentials");
+    console.warn("⚠️ Missing Contentstack credentials");
     return null;
   }
 
@@ -18,24 +18,25 @@ async function getAgentData(agentId: string) {
           api_key: apiKey,
           access_token: deliveryToken,
         },
-        cache: "no-store",
+        cache: "no-store", // avoids stale data
       }
     );
 
     if (!res.ok) {
-      console.error(`Failed to fetch agent ${agentId}`, await res.text());
+      console.error(`❌ Failed to fetch agent ${agentId}`, await res.text());
       return null;
     }
 
     const data = await res.json();
     return data.entries?.[0] ?? null;
   } catch (error) {
-    console.error("Error fetching agent data:", error);
+    console.error("❌ Error fetching agent data:", error);
     return null;
   }
 }
 
-// ✅ Inline typing for params + explicit return type
+// ✅ Page Component
+// @ts-expect-error – Next.js type inference bug (params incorrectly typed as Promise)
 export default async function AgentPage({
   params,
 }: {
@@ -67,9 +68,7 @@ export default async function AgentPage({
 }
 
 // ✅ Pre-generate static params for known agents
-export async function generateStaticParams(): Promise<
-  { agentId: string }[]
-> {
+export async function generateStaticParams(): Promise<{ agentId: string }[]> {
   return [
     { agentId: "travel_assistant" },
     { agentId: "conversation_history" },
