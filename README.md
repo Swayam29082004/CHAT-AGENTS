@@ -5,7 +5,6 @@ Embed your agent anywhere using the built-in **Chat Widget SDK**.
 
 ---
 
-
 ## 📺 Demo & Tutorial
 
 👉 [Watch on YouTube](https://youtu.be/3wFCslqKknA)  
@@ -14,8 +13,15 @@ Embed your agent anywhere using the built-in **Chat Widget SDK**.
 
 ## 🚀 Deployment
 
-🔗 Live on Contentstack Launch:  
+🔗 **Live on Contentstack Launch**:  
 👉 [https://chat-agents.contentstackapps.com/](https://chat-agents.contentstackapps.com/)  
+
+---
+
+## 🌍 Live Demo (Travel Website)
+
+👉 [Travel Website](https://travel-websiteess.onrender.com)  
+👉 [GitHub Repo](https://github.com/Swayam29082004/TRAVEL-WEBSITEES.git)  
 
 ---
 
@@ -32,20 +38,36 @@ npm install @swayam29082004/chat-sdk
 
 ## ⚙️ Getting Started
 
-### 1. Clone the repository  
+### 1. Clone the repository
+
 ```bash
 git clone https://github.com/Swayam29082004/CHAT-AGENTS.git
 cd CHAT-AGENTS
 ```
 
 ### 2. Install dependencies
+
 ```bash
 npm install
+npm run dev
 ```
 
-### 3. Set up environment variables
+### 3. Clone the Travel Website repository
 
-Create a `.env.local` file and add your keys, e.g.:
+```bash
+git clone https://github.com/Swayam29082004/TRAVEL-WEBSITEES.git
+```
+
+### 4. Install dependencies for the Travel Website
+
+```bash
+npm install
+npm start
+```
+
+### 5. Set up environment variables
+
+Create a `.env.local` file and add your keys:
 
 ```env
 NEXT_PUBLIC_CONTENTSTACK_API_KEY=your_contentstack_api_key
@@ -67,23 +89,23 @@ BRIGHT_DATA_ZONE_NAME=your_zone
 BRIGHT_DATA_API_TOKEN=your_token
 ```
 
-### 4. Run the development server
+### 6. Run the development server
 
 ```bash
 npm run dev
 ```
 
-Then open [http://localhost:3000](http://localhost:3000).  
+Then open 👉 [http://localhost:3000](http://localhost:3000).
 
 ---
 
 ## 🚀 Features
 
-* 🔐 **Authentication** — Email/password login, optional 2FA, NextAuth + Contentstack OAuth.
-* 🎨 **Agent Playground** — Stepwise flow to configure agents (model, avatar, theme, etc.).
-* 🌐 **Scraping + RAG** — Scrape websites (static & React), chunk content, store in Pinecone.
-* 💬 **Chat Widget SDK** — Reusable React widget to embed agents in other apps.
-* 📦 **Contentstack Integration** — Manage agent entries in Contentstack, optional conversation history logging.
+- 🔐 **Authentication** — Email/password login, optional 2FA, NextAuth + Contentstack OAuth.  
+- 🎨 **Agent Playground** — Stepwise flow to configure agents (model, avatar, theme, etc.).  
+- 🌐 **Scraping + RAG** — Scrape websites (static & React), chunk content, store in Pinecone.  
+- 💬 **Chat Widget SDK** — Reusable React widget to embed agents in other apps.  
+- 📦 **Contentstack Integration** — Manage agent entries in Contentstack, optional conversation history logging.  
 
 ---
 
@@ -93,12 +115,6 @@ Then open [http://localhost:3000](http://localhost:3000).
 2. Use the **Playground** to build your agent  
 3. Scrape content and preview your agent  
 4. Copy the embed snippet and integrate into your site/app  
-
----
-
-## 🌍 Live Demo (Travel Website)
-
-👉 [Travel Website](https://travel-websiteess.onrender.com)  / https://github.com/Swayam29082004/TRAVEL-WEBSITEES.git
 
 ---
 
